@@ -5,6 +5,10 @@
     --surface: #1E1E1E;
     --text: #FFFFFF;
     --text-secondary: #B0B0B0;
+    --primary-color: #1a1a1a;
+    --secondary-color: #gold;
+    --text-color: #333;
+    --background-color: #f5f5f5;
 }
 
 body.dark-theme {
@@ -60,31 +64,88 @@ body.dark-theme {
     margin-bottom: 1rem;
 }
 
-.btn-gold {
-    background-color: var(--gold);
-    border-color: var(--gold);
-    color: var(--background);
-    padding: 0.75rem 2rem;
-    border: none;
+.hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/static/images/hero-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+}
+
+/* Products grid */
+.products {
+    padding: 2rem;
+}
+
+.products h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.product-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 1rem;
+}
+
+.product-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-color);
+}
+
+.price {
+    font-size: 1.25rem;
+    color: #e4a853;
     font-weight: bold;
-    transition: all 0.3s ease;
+    margin: 0.5rem 0;
 }
 
-.btn-gold:hover {
-    background-color: var(--dark-gold);
-    border-color: var(--dark-gold);
-    color: var(--background);
-    transform: translateY(-2px);
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
 }
 
-.btn-outline-gold {
-    border: 2px solid var(--gold);
-    color: var(--gold);
+.btn-primary {
+    background-color: gold;
+    color: black;
 }
 
-.btn-outline-gold:hover {
-    background-color: var(--gold);
-    color: var(--background);
+.btn-primary:hover {
+    background-color: #e4a853;
+}
+
+.btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 /* Search Bar */
@@ -424,7 +485,9 @@ body.dark-theme {
 
 .auth-card {
     animation: fadeIn 0.3s ease-out;
-}/* Admin Dashboard Styles */
+}
+
+/* Admin Dashboard Styles */
 .admin-dashboard {
     background-color: #1a1a1a;
     color: #ffffff;
@@ -625,4 +688,85 @@ body.dark-theme {
 .form-control:valid {
     border-color: #198754;
     box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Base styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* Navigation */
+nav {
+    background-color: var(--primary-color);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo h1 {
+    color: gold;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    margin-left: 1rem;
+}
+
+.nav-links a:hover {
+    color: gold;
+}
+
+/* Footer */
+footer {
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Forms */
+.auth-form {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Error message */
+.error {
+    color: #dc3545;
+    text-align: center;
+    padding: 1rem;
+    background: #ffe6e6;
+    border-radius: 4px;
+    margin: 1rem 0;
 }

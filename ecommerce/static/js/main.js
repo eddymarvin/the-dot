@@ -1,25 +1,66 @@
+// Main JavaScript file for handling frontend interactions
+
 // Constants
 const FREE_DELIVERY_THRESHOLD = 100;
 const DELIVERY_FEE = 10;
 
-// Cart functionality
-let cart = [];
-let cartTotal = 0;
+// Authentication functions
+async function login(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
-// Update cart count
-function updateCartCount() {
-    const cartCount = document.querySelector('.cart-count');
-    if (cartCount) {
-        cartCount.textContent = cart.length;
+    try {
+        const response = await fetch('/api/v1/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            window.location.href = '/';  // Redirect to home page
+        } else {
+            alert(data.error || 'Login failed');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please try again.');
     }
 }
 
-// Calculate delivery fee
-function calculateDelivery(total) {
-    return total >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+async function register(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const email = document.getElementById('email').value;
+
+    try {
+        const response = await fetch('/api/v1/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password, email })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert('Registration successful! Please login.');
+            window.location.href = '/login';
+        } else {
+            alert(data.error || 'Registration failed');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        alert('Registration failed. Please try again.');
+    }
 }
 
-// Add to cart function
+// Cart functions
 async function addToCart(productId, name, price) {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -31,85 +72,108 @@ async function addToCart(productId, name, price) {
         const response = await fetch('/api/v1/cart/add', {
             method: 'POST',
             headers: {
-                'Authorization': token,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 product_id: productId,
-                quantity: 1
+                name: name,
+                quantity: 1,
+                price: price
             })
         });
 
+        const data = await response.json();
         if (response.ok) {
-            window.location.href = '/cart';
+            alert('Product added to cart!');
+            updateCartCount();
         } else {
-            const data = await response.json();
-            showNotification(data.error || 'Failed to add item to cart');
+            alert(data.error || 'Failed to add to cart');
         }
     } catch (error) {
-        console.error('Error adding to cart:', error);
-        showNotification('Failed to add item to cart');
+        console.error('Add to cart error:', error);
+        alert('Failed to add to cart. Please try again.');
     }
 }
 
-// Show notification
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 100);
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
+async function updateCartCount() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const response = await fetch('/api/v1/cart', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            const cartCount = document.getElementById('cart-count');
+            if (cartCount) {
+                cartCount.textContent = data.items ? data.items.length : '0';
+            }
+        }
+    } catch (error) {
+        console.error('Update cart count error:', error);
+    }
 }
 
 // Fetch and display products
 async function fetchProducts() {
     try {
         const response = await fetch('/api/v1/products');
-        const products = await response.json();
-        const productsDiv = document.getElementById('products');
+        if (!response.ok) {
+            throw new Error('Failed to fetch products');
+        }
         
-        if (!productsDiv) return;
+        const productList = await response.json();
+        const productsContainer = document.getElementById('products-container');
+        if (!productsContainer) return; // Only proceed if we're on a page with products
         
-        productsDiv.innerHTML = products.map(product => `
-            <div class="col-md-4 col-lg-3 mb-4">
-                <div class="card product-card">
-                    <img src="${product.image_url}" class="card-img-top" alt="${product.name}">
-                    <div class="card-body">
-                        <h5 class="card-title">${product.name}</h5>
-                        <p class="card-text">${product.description}</p>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="price">$${product.price.toFixed(2)}</span>
-                            <span class="stock">Stock: ${product.stock}</span>
-                        </div>
-                        <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})" 
-                                class="btn btn-gold w-100">
-                            Add to Cart
-                        </button>
-                    </div>
+        productsContainer.innerHTML = productList.map(product => `
+            <div class="product-card">
+                <img src="${product.image_url}" alt="${product.name}" class="product-image">
+                <div class="product-info">
+                    <h3>${product.name}</h3>
+                    <p>${product.description}</p>
+                    <p class="price">$${product.price.toFixed(2)}</p>
+                    <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})" 
+                            class="btn btn-primary add-to-cart"
+                            ${product.stock > 0 ? '' : 'disabled'}>
+                        ${product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                    </button>
                 </div>
             </div>
         `).join('');
     } catch (error) {
         console.error('Error fetching products:', error);
-        showNotification('Error loading products');
+        const productsContainer = document.getElementById('products-container');
+        if (productsContainer) {
+            productsContainer.innerHTML = '<p class="error">Failed to load products. Please try again later.</p>';
+        }
     }
 }
 
-// Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to forms if they exist
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', login);
+    }
+
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', register);
+    }
+
+    // Update cart count on page load
+    updateCartCount();
+
+    // Fetch and display products
     fetchProducts();
-    updateAuthNav(); // From auth.js
-    
+
     // Add smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {

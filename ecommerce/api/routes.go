@@ -8,16 +8,19 @@ import (
 
 // SetupRoutes configures all the routes for our application
 func SetupRoutes(router *gin.Engine) {
-	// Serve static files and templates (only once)
+	// Middleware
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+	router.Use(DebugMiddleware())
+
+	// Load templates and static files (only once)
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "./static")
-
-	// Enable debug middleware
-	router.Use(DebugMiddleware())
 
 	// Public routes
 	router.POST("/api/v1/register", RegisterUser)
 	router.POST("/api/v1/login", LoginUser)
+	router.GET("/api/v1/products", GetProducts)
 
 	// Frontend routes
 	router.GET("/", func(c *gin.Context) {
