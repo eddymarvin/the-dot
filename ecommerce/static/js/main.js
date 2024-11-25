@@ -5,10 +5,11 @@ const FREE_DELIVERY_THRESHOLD = 100;
 const DELIVERY_FEE = 10;
 
 // Authentication functions
-async function login(event) {
+async function handleLogin(event) {
     event.preventDefault();
-    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('errorMessage');
 
     try {
         const response = await fetch('/api/v1/login', {
@@ -16,27 +17,34 @@ async function login(event) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
+
         if (response.ok) {
+            // Store the token
             localStorage.setItem('token', data.token);
-            window.location.href = '/';  // Redirect to home page
+            localStorage.setItem('userName', data.name);
+            
+            // Redirect to home page
+            window.location.href = '/';
         } else {
-            alert(data.error || 'Login failed');
+            errorMessage.textContent = data.error || 'Login failed. Please try again.';
+            errorMessage.style.display = 'block';
         }
     } catch (error) {
-        console.error('Login error:', error);
-        alert('Login failed. Please try again.');
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.style.display = 'block';
     }
 }
 
-async function register(event) {
+async function handleRegister(event) {
     event.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+    const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('errorMessage');
 
     try {
         const response = await fetch('/api/v1/register', {
@@ -44,82 +52,54 @@ async function register(event) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password, email })
+            body: JSON.stringify({ name, email, password })
         });
 
         const data = await response.json();
+
         if (response.ok) {
-            alert('Registration successful! Please login.');
-            window.location.href = '/login';
+            // Store the token
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userName', name);
+            
+            // Redirect to home page
+            window.location.href = '/';
         } else {
-            alert(data.error || 'Registration failed');
+            errorMessage.textContent = data.error || 'Registration failed. Please try again.';
+            errorMessage.style.display = 'block';
         }
     } catch (error) {
-        console.error('Registration error:', error);
-        alert('Registration failed. Please try again.');
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.style.display = 'block';
     }
 }
 
 // Cart functions
-async function addToCart(productId, name, price) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = '/login';
-        return;
-    }
+function addToCart(productId, name, price) {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart.push({ id: productId, name: name, price: price, quantity: 1 });
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCount();
+    showNotification('Product added to cart!');
+}
 
-    try {
-        const response = await fetch('/api/v1/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                product_id: productId,
-                name: name,
-                quantity: 1,
-                price: price
-            })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            alert('Product added to cart!');
-            updateCartCount();
-        } else {
-            alert(data.error || 'Failed to add to cart');
-        }
-    } catch (error) {
-        console.error('Add to cart error:', error);
-        alert('Failed to add to cart. Please try again.');
+function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const cartCount = document.getElementById('cart-count');
+    if (cartCount) {
+        cartCount.textContent = cart.length;
     }
 }
 
-async function updateCartCount() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-        const response = await fetch('/api/v1/cart', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            const cartCount = document.getElementById('cart-count');
-            if (cartCount) {
-                cartCount.textContent = data.items ? data.items.length : '0';
-            }
-        }
-    } catch (error) {
-        console.error('Update cart count error:', error);
-    }
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
 }
 
-// Fetch and display products
+// Products functions
 async function fetchProducts() {
     try {
         const response = await fetch('/api/v1/products');
@@ -127,11 +107,11 @@ async function fetchProducts() {
             throw new Error('Failed to fetch products');
         }
         
-        const productList = await response.json();
+        const data = await response.json();
         const productsContainer = document.getElementById('products-container');
-        if (!productsContainer) return; // Only proceed if we're on a page with products
-        
-        productsContainer.innerHTML = productList.map(product => `
+        if (!productsContainer) return;
+
+        productsContainer.innerHTML = data.products.map(product => `
             <div class="product-card">
                 <img src="${product.image_url}" alt="${product.name}" class="product-image">
                 <div class="product-info">
@@ -139,7 +119,7 @@ async function fetchProducts() {
                     <p>${product.description}</p>
                     <p class="price">$${product.price.toFixed(2)}</p>
                     <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})" 
-                            class="btn btn-primary add-to-cart"
+                            class="add-to-cart"
                             ${product.stock > 0 ? '' : 'disabled'}>
                         ${product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                     </button>
@@ -148,39 +128,51 @@ async function fetchProducts() {
         `).join('');
     } catch (error) {
         console.error('Error fetching products:', error);
-        const productsContainer = document.getElementById('products-container');
-        if (productsContainer) {
-            productsContainer.innerHTML = '<p class="error">Failed to load products. Please try again later.</p>';
-        }
     }
 }
 
-// Initialize
+// Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    // Add event listeners to forms if they exist
-    const loginForm = document.getElementById('login-form');
+    // Set up form handlers
+    const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', login);
+        loginForm.addEventListener('submit', handleLogin);
     }
 
-    const registerForm = document.getElementById('register-form');
+    const registerForm = document.getElementById('registerForm');
     if (registerForm) {
-        registerForm.addEventListener('submit', register);
+        registerForm.addEventListener('submit', handleRegister);
     }
 
-    // Update cart count on page load
+    // Update cart count
     updateCartCount();
 
-    // Fetch and display products
-    fetchProducts();
+    // Fetch products if on home page
+    if (document.getElementById('products-container')) {
+        fetchProducts();
+    }
 
-    // Add smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    });
+    // Check authentication status and update UI
+    const token = localStorage.getItem('token');
+    const userName = localStorage.getItem('userName');
+    if (token && userName) {
+        // Update navigation for logged-in user
+        const navLinks = document.querySelector('.nav-links');
+        if (navLinks) {
+            navLinks.innerHTML = `
+                <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/cart"><i class="fas fa-shopping-cart"></i> Cart <span id="cart-count">0</span></a>
+                <span class="user-name"><i class="fas fa-user"></i> ${userName}</span>
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            `;
+        }
+    }
 });
+
+// Logout function
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('cart');
+    window.location.href = '/login';
+}

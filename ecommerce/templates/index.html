@@ -4,39 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Dot Liquor Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
-    <header>
+<body class="dark-theme">
+    <header class="main-header">
         <nav>
             <div class="logo">
-                <h1>The Dot Liquor Store</h1>
+                <i class="fas fa-wine-bottle"></i>
+                <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
             </div>
             <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/login">Login</a>
-                <a href="/register">Register</a>
-                <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+                <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="/login"><i class="fas fa-user"></i> Login</a>
+                <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
+                <a href="/cart" class="cart-link">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                    <span id="cart-count" class="cart-badge">0</span>
+                </a>
             </div>
         </nav>
     </header>
 
+    <div class="banner">
+        <i class="fas fa-truck"></i>
+        <p>Free Delivery on Orders Over $100!</p>
+    </div>
+
     <main>
         <section class="hero">
-            <h2>Welcome to The Dot Liquor Store</h2>
-            <p>Discover our premium selection of spirits</p>
+            <div class="hero-content">
+                <h2>Welcome to The Dot</h2>
+                <p>Discover our premium selection of spirits</p>
+                <a href="#products" class="cta-button">
+                    <span>Shop Now</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
         </section>
 
-        <section class="products">
-            <h2>Our Products</h2>
+        <section id="products" class="products">
+            <div class="section-header">
+                <h2>Our Premium Collection</h2>
+                <div class="category-filters">
+                    <button class="filter-btn active" data-category="all">All</button>
+                    <button class="filter-btn" data-category="spirits">Spirits</button>
+                    <button class="filter-btn" data-category="wines">Wines</button>
+                    <button class="filter-btn" data-category="beers">Beers</button>
+                </div>
+            </div>
             <div id="products-container" class="products-grid">
                 <!-- Products will be loaded here by JavaScript -->
             </div>
         </section>
     </main>
 
-    <footer>
-        <p>&copy; 2024 The Dot Liquor Store. Please drink responsibly.</p>
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About Us</h3>
+                <p>Premium liquor store with blockchain-verified authenticity.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <a href="#">Terms & Conditions</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Contact Us</a>
+            </div>
+            <div class="footer-section">
+                <h3>Connect With Us</h3>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 The Dot Liquor Store. Please drink responsibly.</p>
+        </div>
     </footer>
 
     <script src="/static/js/main.js"></script>

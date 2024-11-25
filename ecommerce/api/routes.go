@@ -11,10 +11,8 @@ func SetupRoutes(router *gin.Engine) {
 	// Middleware
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Use(DebugMiddleware())
 
-	// Load templates and static files (only once)
-	router.LoadHTMLGlob("templates/*")
+	// Serve static files
 	router.Static("/static", "./static")
 
 	// Public routes
@@ -36,21 +34,19 @@ func SetupRoutes(router *gin.Engine) {
 		c.HTML(http.StatusOK, "cart.html", nil)
 	})
 
-	// Protected routes
+	// Protected API routes
 	protected := router.Group("/api/v1")
 	protected.Use(AuthMiddleware())
 	{
 		// Cart routes
 		protected.GET("/cart", GetCart)
-		protected.POST("/cart/add", AddToCart)
+		protected.POST("/cart", AddToCart)
 		protected.DELETE("/cart/:product_id", RemoveFromCart)
 
 		// Order routes
+		protected.POST("/orders", CreateOrder)
+		protected.GET("/orders/:id", GetOrder)
 		protected.GET("/orders", GetOrders)
-
-		// M-Pesa routes
-		protected.POST("/mpesa/stkpush", handleMpesaSTKPush)
-		protected.GET("/mpesa/status/:id", getMpesaTransactionStatus)
 	}
 
 	// Public M-Pesa callback

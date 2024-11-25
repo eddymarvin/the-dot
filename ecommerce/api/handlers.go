@@ -10,6 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+
+	// Add the following line to import the required package
+	_ "github.com/lib/pq"
 )
 
 type Product struct {
@@ -150,55 +153,10 @@ func GetOrder(c *gin.Context) {
 	})
 }
 
-func RegisterUser(c *gin.Context) {
-	var user User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Check if email already exists
-	for _, u := range users {
-		if u.Email == user.Email {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Email already registered"})
-			return
-		}
-	}
-
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	user.ID = uuid.New().String()
-	user.Password = string(hashedPassword)
-	user.CreatedAt = time.Now()
-
-	users[user.ID] = user
-
-	// Generate JWT token
-	token, err := generateJWT(user.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"token": token,
-		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
-		},
-	})
-}
-
 func LoginUser(c *gin.Context) {
 	var credentials LoginCredentials
 	if err := c.ShouldBindJSON(&credentials); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
 
@@ -214,14 +172,13 @@ func LoginUser(c *gin.Context) {
 	}
 
 	if !found {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
-	// Check password
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+	// Compare passwords
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
@@ -234,11 +191,52 @@ func LoginUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
-		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
-		},
+		"name":  user.Name,
+		"email": user.Email,
+	})
+}
+
+func RegisterUser(c *gin.Context) {
+	var newUser User
+	if err := c.ShouldBindJSON(&newUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	// Check if email already exists
+	for _, u := range users {
+		if u.Email == newUser.Email {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Email already registered"})
+			return
+		}
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process registration"})
+		return
+	}
+
+	// Create new user
+	newUser.ID = uuid.New().String()
+	newUser.Password = string(hashedPassword)
+	newUser.CreatedAt = time.Now()
+
+	// Save user
+	users[newUser.ID] = newUser
+
+	// Generate JWT token
+	token, err := generateJWT(newUser.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"name":  newUser.Name,
+		"email": newUser.Email,
 	})
 }
 
@@ -285,66 +283,77 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 func init() {
+	// Initialize default test user
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("test123"), bcrypt.DefaultCost)
+	defaultUser := User{
+		ID:        uuid.New().String(),
+		Email:     "test@thedot.com",
+		Password:  string(hashedPassword),
+		Name:      "Test User",
+		CreatedAt: time.Now(),
+	}
+	users[defaultUser.ID] = defaultUser
+
 	// Sample products with images
 	sampleProducts := []Product{
 		{
-			ID:          uuid.New().String(),
-			Name:        "Premium Whiskey",
-			Description: "Aged 12 years, smooth and rich flavor",
-			Price:       89.99,
-			Stock:       50,
-			ImageURL:    "https://images.unsplash.com/photo-1582819509237-d6c5fb6e2c21?auto=format&fit=crop&w=800&q=80",
-			Category:    "spirits",
+			ID:          "1",
+			Name:        "Macallan 18 Years",
+			Price:       299.99,
+			Description: "Single Malt Scotch Whisky, aged for 18 years in exceptional oak casks",
+			ImageURL:    "/static/images/macallan18.jpg",
+			Category:    "Whisky",
+			Stock:       15,
 			CreatedAt:   time.Now(),
 		},
 		{
-			ID:          uuid.New().String(),
-			Name:        "Red Wine Reserve",
-			Description: "Full-bodied red wine with berry notes",
-			Price:       45.99,
-			Stock:       100,
-			ImageURL:    "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80",
-			Category:    "wines",
+			ID:          "2",
+			Name:        "Dom Pérignon Vintage",
+			Price:       249.99,
+			Description: "Prestigious champagne with exceptional aging potential",
+			ImageURL:    "/static/images/domperignon.jpg",
+			Category:    "Champagne",
+			Stock:       20,
 			CreatedAt:   time.Now(),
 		},
 		{
-			ID:          uuid.New().String(),
-			Name:        "Craft Beer Pack",
-			Description: "Selection of premium craft beers",
-			Price:       24.99,
-			Stock:       200,
-			ImageURL:    "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=800&q=80",
-			Category:    "beers",
-			CreatedAt:   time.Now(),
-		},
-		{
-			ID:          uuid.New().String(),
-			Name:        "Champagne Deluxe",
-			Description: "Luxury champagne for special occasions",
-			Price:       129.99,
+			ID:          "3",
+			Name:        "Grey Goose Original",
+			Price:       49.99,
+			Description: "Premium French vodka made with the finest ingredients",
+			ImageURL:    "/static/images/greygoose.jpg",
+			Category:    "Vodka",
 			Stock:       30,
-			ImageURL:    "https://images.unsplash.com/photo-1578911373434-0cb395d2cbfb?auto=format&fit=crop&w=800&q=80",
-			Category:    "champagne",
 			CreatedAt:   time.Now(),
 		},
 		{
-			ID:          uuid.New().String(),
-			Name:        "Premium Vodka",
-			Description: "Triple-distilled premium vodka",
-			Price:       59.99,
-			Stock:       75,
-			ImageURL:    "https://images.unsplash.com/photo-1607622750671-6cd9f99bc9d1?auto=format&fit=crop&w=800&q=80",
-			Category:    "spirits",
+			ID:          "4",
+			Name:        "Hennessy XO",
+			Price:       199.99,
+			Description: "Extra Old Cognac blended from over 100 eaux-de-vie",
+			ImageURL:    "/static/images/hennessyxo.jpg",
+			Category:    "Cognac",
+			Stock:       25,
 			CreatedAt:   time.Now(),
 		},
 		{
-			ID:          uuid.New().String(),
-			Name:        "Gin Botanicals",
-			Description: "Artisanal gin with rare botanicals",
-			Price:       69.99,
-			Stock:       45,
-			ImageURL:    "https://images.unsplash.com/photo-1514218953589-2d7d37efd2dc?auto=format&fit=crop&w=800&q=80",
-			Category:    "spirits",
+			ID:          "5",
+			Name:        "Don Julio 1942",
+			Price:       159.99,
+			Description: "Handcrafted luxury añejo tequila aged for a minimum of two and a half years",
+			ImageURL:    "/static/images/donjulio1942.jpg",
+			Category:    "Tequila",
+			Stock:       18,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:          "6",
+			Name:        "Dalmore 15 Year",
+			Price:       89.99,
+			Description: "Highland Single Malt Scotch matured in three different types of wood",
+			ImageURL:    "/static/images/dalmore15.jpg",
+			Category:    "Whisky",
+			Stock:       22,
 			CreatedAt:   time.Now(),
 		},
 	}

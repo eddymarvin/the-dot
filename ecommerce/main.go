@@ -17,10 +17,13 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	r := setupRouter()
+	router := setupRouter()
+
+	// Load HTML templates
+	router.LoadHTMLGlob("templates/*")
 
 	log.Println("Starting server on :8080...")
-	if err := r.Run(":8080"); err != nil {
+	if err := router.Run(":8080"); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}
 }
