@@ -9,10 +9,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
-
-	// Add the following line to import the required package
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Product struct {
@@ -21,7 +19,7 @@ type Product struct {
 	Description string    `json:"description"`
 	Price       float64   `json:"price" binding:"required,gt=0"`
 	Stock       int       `json:"stock" binding:"required,gte=0"`
-	ImageURL    string    `json:"image_url"`
+	Image       string    `json:"image"`
 	Category    string    `json:"category"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -48,6 +46,10 @@ type LoginCredentials struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type CartRequest struct {
+	Items []CartItem `json:"items"`
+}
+
 var (
 	products  = make(map[string]Product)
 	orders    = make(map[string]Order)
@@ -67,8 +69,8 @@ func CreateProduct(c *gin.Context) {
 
 	// Set default image if none provided
 	defaultPlaceholder := "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?auto=format&fit=crop&w=800&q=80"
-	if product.ImageURL == "" {
-		product.ImageURL = defaultPlaceholder
+	if product.Image == "" {
+		product.Image = defaultPlaceholder
 	}
 
 	products[product.ID] = product
@@ -148,6 +150,87 @@ func GetOrder(c *gin.Context) {
 	block := bc.GetBlockByOrderID(id)
 
 	c.JSON(http.StatusOK, gin.H{
+		"order": order,
+		"block": block,
+	})
+}
+
+func CreateOrderFromCart(c *gin.Context) {
+	var cartRequest CartRequest
+	if err := c.ShouldBindJSON(&cartRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get user ID from JWT token
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Calculate total amount and verify products exist
+	var totalAmount float64
+	var productIDs []string
+	for _, item := range cartRequest.Items {
+		product, exists := products[item.ProductID]
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Product not found: " + item.ProductID})
+			return
+		}
+
+		// Check stock availability
+		if product.Stock < item.Quantity {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient stock for product: " + product.Name})
+			return
+		}
+
+		totalAmount += product.Price * float64(item.Quantity)
+		// Add product ID multiple times based on quantity
+		for i := 0; i < item.Quantity; i++ {
+			productIDs = append(productIDs, item.ProductID)
+		}
+	}
+
+	// Apply free delivery if total amount >= $100
+	deliveryFee := 10.0
+	if totalAmount >= 100.0 {
+		deliveryFee = 0.0
+	}
+	totalAmount += deliveryFee
+
+	// Create order
+	order := Order{
+		ID:          uuid.New().String(),
+		UserID:      userID.(string),
+		Products:    productIDs,
+		TotalAmount: totalAmount,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+	}
+
+	// Create blockchain record
+	blockData := blockchain.OrderData{
+		OrderID:     order.ID,
+		UserID:      order.UserID,
+		ProductIDs:  order.Products,
+		TotalAmount: order.TotalAmount,
+		Status:      order.Status,
+		CreatedAt:   order.CreatedAt,
+	}
+
+	bc := blockchain.GetInstance()
+	block := bc.AddBlock(blockData)
+
+	// Update product stock
+	for _, item := range cartRequest.Items {
+		product := products[item.ProductID]
+		product.Stock -= item.Quantity
+		products[item.ProductID] = product
+	}
+
+	orders[order.ID] = order
+	c.JSON(http.StatusCreated, gin.H{
 		"order": order,
 		"block": block,
 	})
@@ -294,14 +377,14 @@ func init() {
 	}
 	users[defaultUser.ID] = defaultUser
 
-	// Sample products with images
+	// Sample products with placeholder images
 	sampleProducts := []Product{
 		{
 			ID:          "1",
 			Name:        "Macallan 18 Years",
 			Price:       299.99,
 			Description: "Single Malt Scotch Whisky, aged for 18 years in exceptional oak casks",
-			ImageURL:    "/static/images/macallan18.jpg",
+			Image:       "/static/images/products/macallan18.jpg",
 			Category:    "Whisky",
 			Stock:       15,
 			CreatedAt:   time.Now(),
@@ -311,7 +394,7 @@ func init() {
 			Name:        "Dom Pérignon Vintage",
 			Price:       249.99,
 			Description: "Prestigious champagne with exceptional aging potential",
-			ImageURL:    "/static/images/domperignon.jpg",
+			Image:       "/static/images/products/domperignon.jpg",
 			Category:    "Champagne",
 			Stock:       20,
 			CreatedAt:   time.Now(),
@@ -321,7 +404,7 @@ func init() {
 			Name:        "Grey Goose Original",
 			Price:       49.99,
 			Description: "Premium French vodka made with the finest ingredients",
-			ImageURL:    "/static/images/greygoose.jpg",
+			Image:       "/static/images/products/greygoose.jpg",
 			Category:    "Vodka",
 			Stock:       30,
 			CreatedAt:   time.Now(),
@@ -331,7 +414,7 @@ func init() {
 			Name:        "Hennessy XO",
 			Price:       199.99,
 			Description: "Extra Old Cognac blended from over 100 eaux-de-vie",
-			ImageURL:    "/static/images/hennessyxo.jpg",
+			Image:       "/static/images/products/hennessyxo.jpg",
 			Category:    "Cognac",
 			Stock:       25,
 			CreatedAt:   time.Now(),
@@ -341,7 +424,7 @@ func init() {
 			Name:        "Don Julio 1942",
 			Price:       159.99,
 			Description: "Handcrafted luxury añejo tequila aged for a minimum of two and a half years",
-			ImageURL:    "/static/images/donjulio1942.jpg",
+			Image:       "/static/images/products/donjulio1942.jpg",
 			Category:    "Tequila",
 			Stock:       18,
 			CreatedAt:   time.Now(),
@@ -351,7 +434,7 @@ func init() {
 			Name:        "Dalmore 15 Year",
 			Price:       89.99,
 			Description: "Highland Single Malt Scotch matured in three different types of wood",
-			ImageURL:    "/static/images/dalmore15.jpg",
+			Image:       "/static/images/products/dalmore15.jpg",
 			Category:    "Whisky",
 			Stock:       22,
 			CreatedAt:   time.Now(),

@@ -3,29 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Dot Liquor Store</title>
+    <title>Register - The Dot Liquor Store</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232a2a2a' stroke='%23FFD700' stroke-width='5'/%3E%3Ctext x='50' y='65' font-family='Arial' font-size='40' fill='%23FFD700' text-anchor='middle'%3E•%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
-    <div class="container">
-        <h1>Register</h1>
-        <form id="register-form" class="auth-form">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+<body class="dark-theme">
+    <header class="main-header">
+        <nav>
+            <div class="logo">
+                <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
+                    <circle cx="50" cy="50" r="45" fill="#2a2a2a" stroke="#FFD700" stroke-width="5"/>
+                    <text x="50" y="65" font-family="Arial" font-size="40" fill="#FFD700" text-anchor="middle">•</text>
+                </svg>
+                <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
             </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
+            <div class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/login"><i class="fas fa-user"></i> Login</a>
+                <a href="/register" class="active"><i class="fas fa-user-plus"></i> Register</a>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+        </nav>
+    </header>
+
+    <main class="auth-container">
+        <div class="auth-card">
+            <h2><i class="fas fa-user-plus gold-text"></i> Register</h2>
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="password" name="password" required placeholder="Choose a password">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="auth-button">
+                        <span>Create Account</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div id="errorMessage" class="error-message"></div>
+            </form>
+            <div class="auth-links">
+                <p>Already have an account? <a href="/login" class="gold-text">Login here</a></p>
             </div>
-            <button type="submit" class="btn btn-primary">Register</button>
-        </form>
-        <p>Already have an account? <a href="/login">Login here</a></p>
-    </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About Us</h3>
+                <p>Premium liquor store with blockchain-verified authenticity.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <a href="#">Terms & Conditions</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Contact Us</a>
+            </div>
+            <div class="footer-section">
+                <h3>Connect With Us</h3>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 The Dot Liquor Store. Please drink responsibly.</p>
+        </div>
+    </footer>
+
     <script src="/static/js/main.js"></script>
 </body>
 </html>

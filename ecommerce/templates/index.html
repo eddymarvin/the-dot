@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Dot Liquor Store</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232a2a2a' stroke='%23FFD700' stroke-width='5'/%3E%3Ctext x='50' y='65' font-family='Arial' font-size='40' fill='%23FFD700' text-anchor='middle'%3E•%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
@@ -11,53 +12,62 @@
     <header class="main-header">
         <nav>
             <div class="logo">
-                <i class="fas fa-wine-bottle"></i>
+                <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
+                    <circle cx="50" cy="50" r="45" fill="#2a2a2a" stroke="#FFD700" stroke-width="5"/>
+                    <text x="50" y="65" font-family="Arial" font-size="40" fill="#FFD700" text-anchor="middle">•</text>
+                </svg>
                 <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
             </div>
             <div class="nav-links">
                 <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
-                <a href="/login"><i class="fas fa-user"></i> Login</a>
-                <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
-                <a href="/cart" class="cart-link">
-                    <i class="fas fa-shopping-cart"></i> Cart
-                    <span id="cart-count" class="cart-badge">0</span>
-                </a>
+                <div class="auth-links" id="authLinks">
+                    <a href="/login"><i class="fas fa-user"></i> Login</a>
+                    <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
+                </div>
+                <div class="user-links" id="userLinks" style="display: none;">
+                    <span id="userName" class="gold-text"></span>
+                    <a href="/cart"><i class="fas fa-shopping-cart"></i> Cart (<span id="cartCount">0</span>)</a>
+                    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
             </div>
         </nav>
     </header>
 
-    <div class="banner">
-        <i class="fas fa-truck"></i>
-        <p>Free Delivery on Orders Over $100!</p>
-    </div>
-
-    <main>
+    <main class="main-content">
         <section class="hero">
             <div class="hero-content">
-                <h2>Welcome to The Dot</h2>
-                <p>Discover our premium selection of spirits</p>
-                <a href="#products" class="cta-button">
-                    <span>Shop Now</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
+                <h2>Premium Liquor Collection</h2>
+                <p>Discover our curated selection of fine spirits and rare finds.</p>
             </div>
         </section>
 
-        <section id="products" class="products">
-            <div class="section-header">
-                <h2>Our Premium Collection</h2>
+        <section class="filters">
+            <div class="filter-container">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search products...">
+                    <i class="fas fa-search"></i>
+                </div>
                 <div class="category-filters">
                     <button class="filter-btn active" data-category="all">All</button>
-                    <button class="filter-btn" data-category="spirits">Spirits</button>
-                    <button class="filter-btn" data-category="wines">Wines</button>
-                    <button class="filter-btn" data-category="beers">Beers</button>
+                    <button class="filter-btn" data-category="Whisky">Whisky</button>
+                    <button class="filter-btn" data-category="Champagne">Champagne</button>
+                    <button class="filter-btn" data-category="Vodka">Vodka</button>
+                    <button class="filter-btn" data-category="Cognac">Cognac</button>
+                    <button class="filter-btn" data-category="Tequila">Tequila</button>
                 </div>
             </div>
-            <div id="products-container" class="products-grid">
-                <!-- Products will be loaded here by JavaScript -->
+        </section>
+
+        <section class="products">
+            <div class="products-grid" id="productsContainer">
+                <!-- Products will be dynamically inserted here -->
             </div>
         </section>
     </main>
+
+    <div id="notification" class="notification">
+        <span id="notificationMessage"></span>
+    </div>
 
     <footer class="main-footer">
         <div class="footer-content">

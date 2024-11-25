@@ -18,10 +18,12 @@ type Cart struct {
 
 // CartItem represents an item in the cart
 type CartItem struct {
-	ProductID string
-	Name      string
-	Price     float64
-	Quantity  int
+	ProductID          string  `json:"product_id"`
+	Name               string  `json:"name"`
+	Price              float64 `json:"price"`
+	Quantity           int     `json:"quantity"`
+	ProductImage       string  `json:"product_image"`
+	ProductDescription string  `json:"product_description"`
 }
 
 // In-memory storage for carts
@@ -131,4 +133,3 @@ func calculateTotal(items []CartItem) float64 {
 	}
 	return total
 }
-
