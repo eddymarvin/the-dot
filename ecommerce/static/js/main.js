@@ -33,8 +33,15 @@ async function handleLogin(event) {
         const data = await response.json();
 
         if (response.ok) {
-            localStorage.setItem('token', data.token);
+            // Store token with Bearer prefix
+            localStorage.setItem('token', `Bearer ${data.token}`);
             localStorage.setItem('userName', data.name);
+            localStorage.setItem('userEmail', data.email);
+            
+            // Update UI immediately
+            updateAuthUI();
+            
+            // Redirect to home
             window.location.href = '/';
         } else {
             errorMessage.textContent = data.error || 'Login failed. Please check your credentials and try again.';
@@ -88,8 +95,10 @@ async function handleRegister(event) {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
     localStorage.removeItem('cart');
     updateAuthUI();
+    updateCartCount();
     window.location.href = '/';
 }
 
@@ -97,10 +106,11 @@ function logout() {
 async function fetchProducts() {
     try {
         const response = await fetch('/api/v1/products');
-        products = await response.json();
-        renderProducts();
+        const products = await response.json();
+        displayProducts(products);
     } catch (error) {
-        showNotification('Error loading products');
+        console.error('Error fetching products:', error);
+        showNotification('Failed to load products');
     }
 }
 
@@ -158,10 +168,30 @@ function renderProducts() {
     });
 }
 
+// Product display functions
+function displayProducts(products) {
+    const productsGrid = document.getElementById('productsGrid');
+    if (!productsGrid) return;
+
+    productsGrid.innerHTML = products.map(product => `
+        <div class="product-card">
+            <img src="${product.Image}" alt="${product.Name}" class="product-image">
+            <div class="product-details">
+                <h3>${product.Name}</h3>
+                <p class="price">$${product.Price.toFixed(2)}</p>
+                <p class="description">${product.Description}</p>
+                <button onclick="addToCart('${product.ID}', '${product.Name}', ${product.Price})">
+                    <i class="fas fa-cart-plus"></i> Add to Cart
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
 // Cart functions
 function getCart() {
-    const cart = localStorage.getItem('cart');
-    return cart ? JSON.parse(cart) : [];
+    const cartData = localStorage.getItem('cart');
+    return cartData ? JSON.parse(cartData) : [];
 }
 
 function saveCart(cart) {
@@ -169,23 +199,29 @@ function saveCart(cart) {
     updateCartCount();
 }
 
-function addToCart(productId, name, price) {
+async function addToCart(productId, name, price) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
     const cart = getCart();
-    const existingItem = cart.find(item => item.id === productId);
+    const existingItem = cart.find(item => item.productId === productId);
 
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
         cart.push({
-            id: productId,
-            name: name,
-            price: price,
+            productId,
+            name,
+            price,
             quantity: 1
         });
     }
 
     saveCart(cart);
-    showNotification(`${name} added to cart`);
+    showNotification('Item added to cart');
 }
 
 function updateCartCount() {
@@ -194,6 +230,33 @@ function updateCartCount() {
     const cartCount = document.getElementById('cartCount');
     if (cartCount) {
         cartCount.textContent = count;
+    }
+}
+
+async function checkout() {
+    try {
+        const cart = getCart();
+        if (cart.length === 0) {
+            showNotification('Your cart is empty');
+            return;
+        }
+
+        const response = await authenticatedFetch('/api/v1/orders', {
+            method: 'POST',
+            body: JSON.stringify({ items: cart })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to create order');
+        }
+
+        const data = await response.json();
+        localStorage.removeItem('cart');
+        updateCartCount();
+        showNotification('Order placed successfully!');
+        window.location.href = '/orders/' + data.order.id;
+    } catch (error) {
+        showNotification(error.message);
     }
 }
 
@@ -228,15 +291,15 @@ function renderCart() {
                 <div class="cart-item-price">$${item.price.toFixed(2)}</div>
             </div>
             <div class="quantity-controls">
-                <button class="quantity-btn" onclick="updateQuantity('${item.id}', ${item.quantity - 1})">
+                <button class="quantity-btn" onclick="updateQuantity('${item.productId}', ${item.quantity - 1})">
                     <i class="fas fa-minus"></i>
                 </button>
                 <span class="quantity-display">${item.quantity}</span>
-                <button class="quantity-btn" onclick="updateQuantity('${item.id}', ${item.quantity + 1})">
+                <button class="quantity-btn" onclick="updateQuantity('${item.productId}', ${item.quantity + 1})">
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
-            <button class="remove-item" onclick="removeFromCart('${item.id}')">
+            <button class="remove-item" onclick="removeFromCart('${item.productId}')">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -252,7 +315,7 @@ function updateQuantity(productId, newQuantity) {
     }
 
     const cart = getCart();
-    const item = cart.find(item => item.id === productId);
+    const item = cart.find(item => item.productId === productId);
     if (item) {
         item.quantity = newQuantity;
         saveCart(cart);
@@ -262,7 +325,7 @@ function updateQuantity(productId, newQuantity) {
 
 function removeFromCart(productId) {
     const cart = getCart();
-    const updatedCart = cart.filter(item => item.id !== productId);
+    const updatedCart = cart.filter(item => item.productId !== productId);
     saveCart(updatedCart);
     renderCart();
     showNotification('Item removed from cart');
@@ -296,43 +359,116 @@ function updateCartSummary() {
     }
 }
 
-async function checkout() {
-    const cart = getCart();
-    if (cart.length === 0) {
-        showNotification('Your cart is empty');
+// Cart and Checkout Process
+let selectedPaymentMethod = null;
+
+function proceedToDelivery() {
+    const cartItems = document.getElementById('cartItems');
+    const deliveryForm = document.getElementById('deliveryForm');
+    const proceedToDeliveryBtn = document.getElementById('proceedToDelivery');
+    const proceedToPaymentBtn = document.getElementById('proceedToPayment');
+
+    if (cartItems) cartItems.style.display = 'none';
+    if (deliveryForm) deliveryForm.style.display = 'block';
+    if (proceedToDeliveryBtn) proceedToDeliveryBtn.style.display = 'none';
+    if (proceedToPaymentBtn) proceedToPaymentBtn.style.display = 'block';
+}
+
+function proceedToPayment() {
+    const deliveryForm = document.getElementById('deliveryDetailsForm');
+    if (!deliveryForm.checkValidity()) {
+        deliveryForm.reportValidity();
         return;
     }
 
-    const cartItems = cart.map(item => ({
-        id: item.id,
-        quantity: item.quantity
-    }));
+    document.getElementById('deliveryForm').style.display = 'none';
+    document.getElementById('paymentSection').style.display = 'block';
+    document.getElementById('proceedToPayment').style.display = 'none';
+    document.getElementById('confirmPayment').style.display = 'block';
+}
+
+function selectPaymentMethod(method) {
+    selectedPaymentMethod = method;
+    
+    // Hide all payment forms
+    document.querySelectorAll('.payment-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    
+    // Remove selected class from all methods
+    document.querySelectorAll('.payment-method').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // Show selected method's form and highlight selection
+    const selectedEl = event.currentTarget;
+    selectedEl.classList.add('selected');
+    
+    if (method === 'mpesa') {
+        document.getElementById('mpesaForm').style.display = 'block';
+    } else if (method === 'card') {
+        document.getElementById('cardForm').style.display = 'block';
+    }
+}
+
+async function confirmPayment() {
+    if (!selectedPaymentMethod) {
+        showNotification('Please select a payment method');
+        return;
+    }
+
+    const deliveryDetails = {
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        phone: document.getElementById('phone').value,
+        instructions: document.getElementById('deliveryInstructions').value
+    };
+
+    let paymentDetails = {};
+    if (selectedPaymentMethod === 'mpesa') {
+        const mpesaPhone = document.getElementById('mpesaPhone').value;
+        if (!mpesaPhone || !/^[0-9]{10}$/.test(mpesaPhone)) {
+            showNotification('Please enter a valid M-Pesa phone number');
+            return;
+        }
+        paymentDetails = {
+            method: 'mpesa',
+            phone: mpesaPhone
+        };
+    } else if (selectedPaymentMethod === 'card') {
+        const cardForm = document.getElementById('cardForm');
+        if (!cardForm.checkValidity()) {
+            cardForm.reportValidity();
+            return;
+        }
+        paymentDetails = {
+            method: 'card',
+            card_number: document.getElementById('cardNumber').value,
+            expiry: document.getElementById('expiryDate').value,
+            cvv: document.getElementById('cvv').value
+        };
+    }
 
     try {
-        const response = await fetch('/api/orders/cart', {
+        const response = await authenticatedFetch('/api/v1/orders', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ items: cartItems })
+            body: JSON.stringify({
+                items: getCart(),
+                delivery_details: deliveryDetails,
+                payment_details: paymentDetails
+            })
         });
 
         if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.error || 'Failed to create order');
+            throw new Error('Failed to create order');
         }
 
-        const data = await response.json();
-        
-        // Clear the cart
+        // Clear cart and show success
         localStorage.removeItem('cart');
         updateCartCount();
+        showNotification('Order placed successfully! Redirecting to home page...');
         
-        // Show success message
-        showNotification('Order placed successfully!');
-        
-        // Redirect to home page after a short delay
+        // Redirect to home page after 2 seconds
         setTimeout(() => {
             window.location.href = '/';
         }, 2000);
@@ -341,166 +477,28 @@ async function checkout() {
     }
 }
 
-function updateTotal() {
-    const subtotal = calculateSubtotal();
-    const deliveryFee = 10.00; // Fixed delivery fee
-    const total = subtotal + deliveryFee;
-
-    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('deliveryFee').textContent = `$${deliveryFee.toFixed(2)}`;
-    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
-}
-
-function calculateSubtotal() {
-    const cart = getCart();
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-}
-
-document.getElementById('proceedToDelivery').addEventListener('click', function() {
-    const cartItems = document.getElementById('cartItems');
-    const deliveryForm = document.getElementById('deliveryForm');
-    const proceedToDelivery = document.getElementById('proceedToDelivery');
-    const proceedToPayment = document.getElementById('proceedToPayment');
-
-    cartItems.style.display = 'none';
-    deliveryForm.style.display = 'block';
-    proceedToDelivery.style.display = 'none';
-    proceedToPayment.style.display = 'block';
-});
-
-document.getElementById('proceedToPayment').addEventListener('click', function() {
-    const deliveryForm = document.getElementById('deliveryForm');
-    const paymentSection = document.getElementById('paymentSection');
-    const proceedToPayment = document.getElementById('proceedToPayment');
-    const confirmPayment = document.getElementById('confirmPayment');
-
-    // Validate delivery form
-    const form = document.getElementById('deliveryDetailsForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    deliveryForm.style.display = 'none';
-    paymentSection.style.display = 'block';
-    proceedToPayment.style.display = 'none';
-    confirmPayment.style.display = 'block';
-});
-
-function selectPaymentMethod(method) {
-    selectedPaymentMethod = method;
+// Initialize test cart items
+function initializeTestCart() {
+    const cart = [
+        {
+            productId: "1",
+            name: "Macallan 18 Years",
+            price: 299.99,
+            quantity: 1
+        },
+        {
+            productId: "2",
+            name: "Dom Pérignon Vintage",
+            price: 249.99,
+            quantity: 1
+        }
+    ];
     
-    // Update UI to show selected method
-    document.querySelectorAll('.payment-method').forEach(el => {
-        el.classList.remove('selected');
-    });
-    event.currentTarget.classList.add('selected');
-
-    // Show/hide card form
-    const cardForm = document.getElementById('cardPaymentForm');
-    cardForm.style.display = method === 'card' ? 'block' : 'none';
+    saveCart(cart);
+    updateCartCount();
+    renderCart();
+    showNotification('Test items added to cart');
 }
-
-document.getElementById('confirmPayment').addEventListener('click', async function() {
-    if (!selectedPaymentMethod) {
-        alert('Please select a payment method');
-        return;
-    }
-
-    const deliveryDetails = {
-        address: document.getElementById('address').value,
-        city: document.getElementById('city').value,
-        zipCode: document.getElementById('zipCode').value,
-        phone: document.getElementById('phone').value,
-        instructions: document.getElementById('deliveryInstructions').value
-    };
-
-    let paymentDetails = {};
-    if (selectedPaymentMethod === 'card') {
-        const cardForm = document.getElementById('cardForm');
-        if (!cardForm.checkValidity()) {
-            cardForm.reportValidity();
-            return;
-        }
-
-        paymentDetails = {
-            method: 'card',
-            card_details: {
-                number: document.getElementById('cardNumber').value,
-                expiry_month: parseInt(document.getElementById('expiryMonth').value),
-                expiry_year: parseInt(document.getElementById('expiryYear').value),
-                cvv: document.getElementById('cvv').value,
-                holder_name: document.getElementById('cardHolderName').value
-            }
-        };
-    } else if (selectedPaymentMethod === 'paypal') {
-        paymentDetails = {
-            method: 'paypal',
-            paypal_details: {
-                email: localStorage.getItem('userEmail') // You'll need to store this during login
-            }
-        };
-    } else if (selectedPaymentMethod === 'crypto') {
-        paymentDetails = {
-            method: 'crypto',
-            crypto_details: {
-                wallet_address: 'YOUR_WALLET_ADDRESS', // You'll need to implement wallet connection
-                currency: 'ETH'
-            }
-        };
-    }
-
-    try {
-        const cart = getCart();
-        const response = await fetch('/api/v1/orders', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({
-                items: cart,
-                delivery_details: deliveryDetails,
-                payment_details: paymentDetails,
-                total_amount: parseFloat(document.getElementById('total').textContent.slice(1))
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to create order');
-        }
-
-        const result = await response.json();
-        
-        // Process payment
-        const paymentResponse = await fetch('/api/v1/payment', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({
-                order_id: result.id,
-                amount: result.total_amount,
-                method: selectedPaymentMethod,
-                ...paymentDetails
-            })
-        });
-
-        if (!paymentResponse.ok) {
-            throw new Error('Payment failed');
-        }
-
-        // Clear cart and redirect to success page
-        localStorage.removeItem('cart');
-        alert('Order placed successfully!');
-        window.location.href = '/';
-
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to process order: ' + error.message);
-    }
-});
 
 // UI functions
 function showNotification(message) {
@@ -575,12 +573,38 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchProducts();
 
     // Initialize cart page if we're on it
-    if (window.location.pathname === '/cart') {
-        renderCart();
+    if (window.location.pathname === '/cart' && (!getCart() || getCart().length === 0)) {
+        initializeTestCart();
     }
 
     const checkoutButton = document.getElementById('checkoutButton');
     if (checkoutButton) {
         checkoutButton.addEventListener('click', checkout);
     }
+
+    // Cart page buttons
+    const proceedToDeliveryBtn = document.getElementById('proceedToDelivery');
+    if (proceedToDeliveryBtn) {
+        proceedToDeliveryBtn.addEventListener('click', proceedToDelivery);
+    }
+
+    const proceedToPaymentBtn = document.getElementById('proceedToPayment');
+    if (proceedToPaymentBtn) {
+        proceedToPaymentBtn.addEventListener('click', proceedToPayment);
+    }
+
+    const confirmPaymentBtn = document.getElementById('confirmPayment');
+    if (confirmPaymentBtn) {
+        confirmPaymentBtn.addEventListener('click', confirmPayment);
+    }
 });
+
+// Helper function for authenticated fetch
+function authenticatedFetch(url, options) {
+    const token = localStorage.getItem('token');
+    if (token) {
+        options.headers = options.headers || {};
+        options.headers.Authorization = `Bearer ${token}`;
+    }
+    return fetch(url, options);
+}

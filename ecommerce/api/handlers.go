@@ -50,11 +50,17 @@ type CartRequest struct {
 	Items []CartItem `json:"items"`
 }
 
+type CartItem struct {
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
+}
+
 var (
 	products  = make(map[string]Product)
 	orders    = make(map[string]Order)
 	users     = make(map[string]User)
-	jwtSecret = []byte("your-secret-key") // In production, use environment variable
+	userCart  = make(map[string][]CartItem)
+	jwtSecret = []byte("thedot-secure-jwt-secret-2024") // TODO: Move to environment variable
 )
 
 func CreateProduct(c *gin.Context) {
@@ -409,40 +415,25 @@ func init() {
 			Stock:       30,
 			CreatedAt:   time.Now(),
 		},
-		{
-			ID:          "4",
-			Name:        "Hennessy XO",
-			Price:       199.99,
-			Description: "Extra Old Cognac blended from over 100 eaux-de-vie",
-			Image:       "/static/images/products/hennessyxo.jpg",
-			Category:    "Cognac",
-			Stock:       25,
-			CreatedAt:   time.Now(),
-		},
-		{
-			ID:          "5",
-			Name:        "Don Julio 1942",
-			Price:       159.99,
-			Description: "Handcrafted luxury añejo tequila aged for a minimum of two and a half years",
-			Image:       "/static/images/products/donjulio1942.jpg",
-			Category:    "Tequila",
-			Stock:       18,
-			CreatedAt:   time.Now(),
-		},
-		{
-			ID:          "6",
-			Name:        "Dalmore 15 Year",
-			Price:       89.99,
-			Description: "Highland Single Malt Scotch matured in three different types of wood",
-			Image:       "/static/images/products/dalmore15.jpg",
-			Category:    "Whisky",
-			Stock:       22,
-			CreatedAt:   time.Now(),
-		},
 	}
 
 	// Add sample products to the products map
 	for _, product := range sampleProducts {
 		products[product.ID] = product
 	}
+
+	// Add test items to cart for the default user
+	defaultCart := []CartItem{
+		{
+			ProductID: "1",
+			Quantity:  1,
+		},
+		{
+			ProductID: "2",
+			Quantity:  1,
+		},
+	}
+
+	// Store cart in user's localStorage
+	userCart[defaultUser.ID] = defaultCart
 }
