@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -35,20 +34,9 @@ func DebugMiddleware() gin.HandlerFunc {
 	}
 }
 
-// Helper function to get user ID from context
-func getUserIDFromContext(c *gin.Context) string {
-	user, exists := c.Get("user")
-	if !exists {
-		return ""
-	}
-
-	claims := user.(jwt.MapClaims)
-	return claims["user_id"].(string)
-}
-
 // Admin dashboard handler
 func handleAdminDashboard(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin.html", gin.H{
-		"AdminPhone": "254741168085",
+		"title": "Admin Dashboard",
 	})
 }

@@ -2,12 +2,13 @@ package api
 
 import (
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
 // GetOrders returns the user's orders
 func GetOrders(c *gin.Context) {
-	userID := getUserIDFromContext(c)
+	userID := GetUserFromContext(c)
 	userOrdersList := []Order{}
 
 	// Get orders from the global orders map

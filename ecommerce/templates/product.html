@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - The Dot Liquor Store</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">The Dot</a>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/products" class="nav-link active">Products</a>
+            <div id="authLinks" class="auth-links">
+                <a href="/login" class="nav-link">Login</a>
+                <a href="/register" class="nav-link">Register</a>
+            </div>
+            <div id="userLinks" class="user-links" style="display: none;">
+                <a href="/cart" class="nav-link cart-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cartCount">0</span>
+                </a>
+                <button onclick="logout()" class="nav-link logout-btn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Products Section -->
+    <main class="products-page">
+        <!-- Filters and Search -->
+        <div class="filters-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search products...">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="category-filters">
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="whisky">Whisky</button>
+                <button class="filter-btn" data-category="vodka">Vodka</button>
+                <button class="filter-btn" data-category="gin">Gin</button>
+                <button class="filter-btn" data-category="wine">Wine</button>
+                <button class="filter-btn" data-category="champagne">Champagne</button>
+            </div>
+            <div class="sort-section">
+                <select id="sortSelect">
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="products-grid" id="productsContainer">
+            <!-- Products will be dynamically inserted here -->
+        </div>
+
+        <!-- Quick View Modal -->
+        <div id="quickViewModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div class="product-quick-view">
+                    <!-- Quick view content will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div id="notification" class="notification">
+            <span id="notificationMessage"></span>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About Us</h3>
+                <p>Premium liquor store with blockchain verification for authenticity.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p>Email: contact@thedot.com</p>
+                <p>Phone: (555) 123-4567</p>
+            </div>
+            <div class="footer-section">
+                <h3>Follow Us</h3>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 The Dot. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

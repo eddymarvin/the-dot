@@ -3,13 +3,13 @@ package api
 import (
 	"ecommerce/blockchain"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,7 +27,7 @@ type Product struct {
 type Order struct {
 	ID          string    `json:"id"`
 	UserID      string    `json:"user_id" binding:"required"`
-	Products    []string  `json:"product_ids" binding:"required"` // List of product IDs
+	Products    []string  `json:"product_ids" binding:"required"`
 	TotalAmount float64   `json:"total_amount"`
 	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -46,21 +46,11 @@ type LoginCredentials struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type CartRequest struct {
-	Items []CartItem `json:"items"`
-}
-
-type CartItem struct {
-	ProductID string `json:"product_id"`
-	Quantity  int    `json:"quantity"`
-}
-
 var (
 	products  = make(map[string]Product)
 	orders    = make(map[string]Order)
 	users     = make(map[string]User)
-	userCart  = make(map[string][]CartItem)
-	jwtSecret = []byte("thedot-secure-jwt-secret-2024") // TODO: Move to environment variable
+	jwtSecret = []byte("your-256-bit-secret") // TODO: Move to environment variable
 )
 
 func CreateProduct(c *gin.Context) {
@@ -162,23 +152,23 @@ func GetOrder(c *gin.Context) {
 }
 
 func CreateOrderFromCart(c *gin.Context) {
-	var cartRequest CartRequest
-	if err := c.ShouldBindJSON(&cartRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	userID := GetUserFromContext(c)
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	// Get user ID from JWT token
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	// Get user's cart
+	cart, exists := userCarts[userID]
+	if !exists || len(cart.Items) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cart is empty"})
 		return
 	}
 
 	// Calculate total amount and verify products exist
 	var totalAmount float64
 	var productIDs []string
-	for _, item := range cartRequest.Items {
+	for _, item := range cart.Items {
 		product, exists := products[item.ProductID]
 		if !exists {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Product not found: " + item.ProductID})
@@ -208,7 +198,7 @@ func CreateOrderFromCart(c *gin.Context) {
 	// Create order
 	order := Order{
 		ID:          uuid.New().String(),
-		UserID:      userID.(string),
+		UserID:      userID,
 		Products:    productIDs,
 		TotalAmount: totalAmount,
 		Status:      "pending",
@@ -229,11 +219,15 @@ func CreateOrderFromCart(c *gin.Context) {
 	block := bc.AddBlock(blockData)
 
 	// Update product stock
-	for _, item := range cartRequest.Items {
+	for _, item := range cart.Items {
 		product := products[item.ProductID]
 		product.Stock -= item.Quantity
 		products[item.ProductID] = product
 	}
+
+	// Clear the user's cart
+	cart.Items = []CartItem{}
+	cart.UpdatedAt = time.Now()
 
 	orders[order.ID] = order
 	c.JSON(http.StatusCreated, gin.H{
@@ -243,16 +237,22 @@ func CreateOrderFromCart(c *gin.Context) {
 }
 
 func LoginUser(c *gin.Context) {
+	fmt.Println("Login attempt received")
+
 	var credentials LoginCredentials
 	if err := c.ShouldBindJSON(&credentials); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		fmt.Printf("Invalid credentials format: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials format"})
 		return
 	}
+
+	fmt.Printf("Login attempt for email: %s\n", credentials.Email)
 
 	// Find user by email
 	var user User
 	var found bool
 	for _, u := range users {
+		fmt.Printf("Checking user: %s\n", u.Email)
 		if u.Email == credentials.Email {
 			user = u
 			found = true
@@ -261,28 +261,55 @@ func LoginUser(c *gin.Context) {
 	}
 
 	if !found {
+		fmt.Println("User not found")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
+	fmt.Println("User found, comparing passwords")
+
 	// Compare passwords
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password)); err != nil {
+		fmt.Printf("Password comparison failed: %v\n", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
+
+	fmt.Println("Password correct, generating token")
 
 	// Generate JWT token
 	token, err := generateJWT(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		fmt.Printf("Token generation failed: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
 		return
 	}
 
+	fmt.Println("Login successful, sending response")
+
+	// Return success response with token and user info
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
-		"name":  user.Name,
-		"email": user.Email,
+		"user": gin.H{
+			"id":    user.ID,
+			"name":  user.Name,
+			"email": user.Email,
+		},
 	})
+}
+
+func generateJWT(userID string) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["user_id"] = userID
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() // Token expires in 24 hours
+
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
 func RegisterUser(c *gin.Context) {
@@ -329,14 +356,6 @@ func RegisterUser(c *gin.Context) {
 	})
 }
 
-func generateJWT(userID string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-	})
-	return token.SignedString(jwtSecret)
-}
-
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
@@ -371,7 +390,18 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
+func GetUserFromContext(c *gin.Context) string {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		return ""
+	}
+	return userID.(string)
+}
+
 func init() {
+	// Initialize JWT secret
+	jwtSecret = []byte("your-256-bit-secret")
+
 	// Initialize default test user
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("test123"), bcrypt.DefaultCost)
 	defaultUser := User{
@@ -423,17 +453,22 @@ func init() {
 	}
 
 	// Add test items to cart for the default user
-	defaultCart := []CartItem{
-		{
-			ProductID: "1",
-			Quantity:  1,
+	cart := &Cart{
+		UserID: defaultUser.ID,
+		Items: []CartItem{
+			{
+				ProductID: "1",
+				Quantity:  1,
+			},
+			{
+				ProductID: "2",
+				Quantity:  1,
+			},
 		},
-		{
-			ProductID: "2",
-			Quantity:  1,
-		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	// Store cart in user's localStorage
-	userCart[defaultUser.ID] = defaultCart
+	userCarts[defaultUser.ID] = cart
 }

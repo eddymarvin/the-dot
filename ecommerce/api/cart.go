@@ -31,7 +31,7 @@ var userCarts = make(map[string]*Cart)
 
 // GetCart returns the user's cart
 func GetCart(c *gin.Context) {
-	userID := getUserIDFromContext(c)
+	userID := GetUserFromContext(c)
 	AppLogger.Info.Printf("Getting cart for user: %s", userID)
 
 	if userID == "" {
@@ -56,8 +56,11 @@ func GetCart(c *gin.Context) {
 
 // AddToCart adds an item to the cart
 func AddToCart(c *gin.Context) {
-	userID := getUserIDFromContext(c)
-	AppLogger.Info.Printf("Adding item to cart for user: %s", userID)
+	userID := GetUserFromContext(c)
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var item CartItem
 	if err := c.BindJSON(&item); err != nil {
@@ -99,7 +102,12 @@ func AddToCart(c *gin.Context) {
 
 // RemoveFromCart removes an item from the cart
 func RemoveFromCart(c *gin.Context) {
-	userID := getUserIDFromContext(c)
+	userID := GetUserFromContext(c)
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
 	productID := c.Param("product_id")
 	AppLogger.Info.Printf("Removing product %s from cart for user: %s", productID, userID)
 

@@ -9,20 +9,35 @@ import (
 // SetupRoutes configures all the routes for our application
 func SetupRoutes(router *gin.Engine) {
 	// Middleware
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
 	// Serve static files
 	router.Static("/static", "./static")
 
-	// Public routes
+	// Public API routes
 	router.POST("/api/v1/register", RegisterUser)
 	router.POST("/api/v1/login", LoginUser)
 	router.GET("/api/v1/products", GetProducts)
+	router.GET("/api/v1/products/:id", GetProduct)
 
 	// Frontend routes
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
+	})
+	router.GET("/products", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "products.html", nil)
 	})
 	router.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)
