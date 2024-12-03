@@ -3,182 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Dot Liquor Store</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232a2a2a' stroke='%23FFD700' stroke-width='5'/%3E%3Ctext x='50' y='65' font-family='Arial' font-size='40' fill='%23FFD700' text-anchor='middle'%3E•%3C/text%3E%3C/svg%3E">
+    <title>The Dot - Premium Liquor Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <header class="main-header">
-        <nav>
-            <div class="logo">
-                <a href="/" style="text-decoration: none;">
-                    <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
-                        <circle cx="50" cy="50" r="45" fill="#2a2a2a" stroke="#FFD700" stroke-width="5"/>
-                        <text x="50" y="65" font-family="Arial" font-size="40" fill="#FFD700" text-anchor="middle">•</text>
-                    </svg>
-                    <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container container">
+                <a href="/" class="navbar-brand">
+                    <i class="fas fa-glass-martini-alt"></i>
+                    The Dot
                 </a>
-            </div>
-            <div class="nav-links">
-                <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
-                <a href="/cart"><i class="fas fa-shopping-cart"></i> Cart</a>
-                <div id="authLinks">
-                    <a href="/login"><i class="fas fa-user"></i> Login</a>
-                    <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
-                </div>
-                <div id="userLinks" style="display: none;">
-                    <a href="/profile"><i class="fas fa-user-circle"></i> <span id="userName"></span></a>
-                    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="/cart" class="nav-link cart-badge">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Cart</span>
+                        <span class="cart-count">0</span>
+                    </a>
+                    <div id="authLinks">
+                        <a href="/login" class="nav-link">
+                            <i class="fas fa-user"></i>
+                            <span>Login</span>
+                        </a>
+                        <a href="/register" class="nav-link">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Register</span>
+                        </a>
+                    </div>
+                    <div id="userLinks" style="display: none;">
+                        <a href="/profile" class="nav-link">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="userName"></span>
+                        </a>
+                        <a href="#" class="nav-link" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main class="container">
-        <section class="hero" style="background-image: url('https://images.unsplash.com/photo-1516997121675-4c2d1684aa3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80'); background-position: center; background-size: cover;">
+    <main>
+        <section class="hero">
             <div class="hero-content">
                 <h2>Exceptional Spirits</h2>
                 <p>Discover our curated collection of the world's finest liquors</p>
             </div>
         </section>
 
-        <!-- Whiskey Section -->
-        <section class="product-section">
-            <h2>Premium Whiskey</h2>
-            <div class="products-grid">
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Macallan 18 Years">
-                    </div>
-                    <div class="product-info">
-                        <h3>Macallan 18 Years</h3>
-                        <p class="product-description">Single Malt Scotch Whisky, aged in sherry oak casks</p>
-                        <div class="product-price">$299.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="macallan18" data-name="Macallan 18 Years" data-price="299.99">
-                            Add to Cart
-                        </button>
-                    </div>
+        <div class="container">
+            <!-- Whiskey Section -->
+            <section class="product-section">
+                <div class="section-header">
+                    <h2>Premium Whiskey</h2>
                 </div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Macallan 18 Years">
+                        </div>
+                        <div class="product-info">
+                            <h3>Macallan 18 Years</h3>
+                            <p class="product-description">Single Malt Scotch Whisky, aged in sherry oak casks</p>
+                            <div class="product-price">$299.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="macallan18" data-name="Macallan 18 Years" data-price="299.99">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1585975754487-829c5c2d4484?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Yamazaki 12 Years">
-                    </div>
-                    <div class="product-info">
-                        <h3>Yamazaki 12 Years</h3>
-                        <p class="product-description">Japanese single malt whisky with hints of fruit and mizunara oak</p>
-                        <div class="product-price">$189.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="yamazaki12" data-name="Yamazaki 12 Years" data-price="189.99">
-                            Add to Cart
-                        </button>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1585975754487-829c5c2d4484?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Yamazaki 12 Years">
+                        </div>
+                        <div class="product-info">
+                            <h3>Yamazaki 12 Years</h3>
+                            <p class="product-description">Japanese single malt whisky with hints of fruit and mizunara oak</p>
+                            <div class="product-price">$189.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="yamazaki12" data-name="Yamazaki 12 Years" data-price="189.99">
+                                Add to Cart
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Champagne Section -->
-        <section class="product-section">
-            <h2>Luxury Champagne</h2>
-            <div class="products-grid">
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1592873846786-0c8b4cad5a4c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Dom Pérignon Vintage">
-                    </div>
-                    <div class="product-info">
-                        <h3>Dom Pérignon Vintage</h3>
-                        <p class="product-description">Prestige champagne from the finest grapes</p>
-                        <div class="product-price">$199.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="domperignon" data-name="Dom Pérignon Vintage" data-price="199.99">
-                            Add to Cart
-                        </button>
-                    </div>
+            <!-- Champagne Section -->
+            <section class="product-section">
+                <div class="section-header">
+                    <h2>Luxury Champagne</h2>
                 </div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1592873846786-0c8b4cad5a4c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Dom Pérignon Vintage">
+                        </div>
+                        <div class="product-info">
+                            <h3>Dom Pérignon Vintage</h3>
+                            <p class="product-description">Prestige champagne from the finest grapes</p>
+                            <div class="product-price">$199.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="domperignon" data-name="Dom Pérignon Vintage" data-price="199.99">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1594374341549-869b608cd141?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Krug Grande Cuvée">
-                    </div>
-                    <div class="product-info">
-                        <h3>Krug Grande Cuvée</h3>
-                        <p class="product-description">Prestigious blend of over 120 wines from different years</p>
-                        <div class="product-price">$249.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="krug" data-name="Krug Grande Cuvée" data-price="249.99">
-                            Add to Cart
-                        </button>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1594374341549-869b608cd141?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Krug Grande Cuvée">
+                        </div>
+                        <div class="product-info">
+                            <h3>Krug Grande Cuvée</h3>
+                            <p class="product-description">Prestigious blend of over 120 wines from different years</p>
+                            <div class="product-price">$249.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="krug" data-name="Krug Grande Cuvée" data-price="249.99">
+                                Add to Cart
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Gin Section -->
-        <section class="product-section">
-            <h2>Craft Gin</h2>
-            <div class="products-grid">
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1614313511387-1436a4480ebb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Monkey 47 Gin">
-                    </div>
-                    <div class="product-info">
-                        <h3>Monkey 47 Gin</h3>
-                        <p class="product-description">Premium gin with 47 botanicals</p>
-                        <div class="product-price">$79.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="monkey47" data-name="Monkey 47 Gin" data-price="79.99">
-                            Add to Cart
-                        </button>
-                    </div>
+            <!-- Gin Section -->
+            <section class="product-section">
+                <div class="section-header">
+                    <h2>Craft Gin</h2>
                 </div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1614313511387-1436a4480ebb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Monkey 47 Gin">
+                        </div>
+                        <div class="product-info">
+                            <h3>Monkey 47 Gin</h3>
+                            <p class="product-description">Premium gin with 47 botanicals</p>
+                            <div class="product-price">$79.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="monkey47" data-name="Monkey 47 Gin" data-price="79.99">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1607622750671-6cd9f99ced4c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Hendrick's Gin">
-                    </div>
-                    <div class="product-info">
-                        <h3>Hendrick's Gin</h3>
-                        <p class="product-description">Scottish gin infused with rose and cucumber</p>
-                        <div class="product-price">$69.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="hendricks" data-name="Hendrick's Gin" data-price="69.99">
-                            Add to Cart
-                        </button>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1607622750671-6cd9f99ced4c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Hendrick's Gin">
+                        </div>
+                        <div class="product-info">
+                            <h3>Hendrick's Gin</h3>
+                            <p class="product-description">Scottish gin infused with rose and cucumber</p>
+                            <div class="product-price">$69.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="hendricks" data-name="Hendrick's Gin" data-price="69.99">
+                                Add to Cart
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Tequila Section -->
-        <section class="product-section">
-            <h2>Premium Tequila</h2>
-            <div class="products-grid">
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1592185285645-5b9d0b13743c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Clase Azul Reposado">
-                    </div>
-                    <div class="product-info">
-                        <h3>Clase Azul Reposado</h3>
-                        <p class="product-description">Ultra-premium tequila in handcrafted bottle</p>
-                        <div class="product-price">$159.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="claseazul" data-name="Clase Azul Reposado" data-price="159.99">
-                            Add to Cart
-                        </button>
-                    </div>
+            <!-- Tequila Section -->
+            <section class="product-section">
+                <div class="section-header">
+                    <h2>Premium Tequila</h2>
                 </div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1592185285645-5b9d0b13743c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Clase Azul Reposado">
+                        </div>
+                        <div class="product-info">
+                            <h3>Clase Azul Reposado</h3>
+                            <p class="product-description">Ultra-premium tequila in handcrafted bottle</p>
+                            <div class="product-price">$159.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="claseazul" data-name="Clase Azul Reposado" data-price="159.99">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1649895771666-71c2e2e9f5c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Don Julio 1942">
-                    </div>
-                    <div class="product-info">
-                        <h3>Don Julio 1942</h3>
-                        <p class="product-description">Luxury añejo tequila aged for a minimum of two and a half years</p>
-                        <div class="product-price">$179.99</div>
-                        <button class="btn btn-primary add-to-cart" data-product-id="donjulio1942" data-name="Don Julio 1942" data-price="179.99">
-                            Add to Cart
-                        </button>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1649895771666-71c2e2e9f5c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Don Julio 1942">
+                        </div>
+                        <div class="product-info">
+                            <h3>Don Julio 1942</h3>
+                            <p class="product-description">Luxury añejo tequila aged for a minimum of two and a half years</p>
+                            <div class="product-price">$179.99</div>
+                            <button class="btn btn-primary add-to-cart" data-product-id="donjulio1942" data-name="Don Julio 1942" data-price="179.99">
+                                Add to Cart
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
 
     <div id="notification" class="notification" style="display: none;"></div>

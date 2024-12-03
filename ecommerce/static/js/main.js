@@ -8,8 +8,167 @@ let selectedPaymentMethod = null;
 const FREE_DELIVERY_THRESHOLD = 100;
 const DELIVERY_FEE = 10;
 
-// Authentication State Management
-let currentUser = null;
+// Auth State Management
+function checkAuthState() {
+    const token = localStorage.getItem('token');
+    const userName = localStorage.getItem('userName');
+    
+    if (token && userName) {
+        document.querySelectorAll('.auth-status').forEach(el => {
+            el.innerHTML = `
+                <span class="user-name">
+                    <i class="fas fa-user"></i>
+                    ${userName}
+                </span>
+                <button onclick="logout()" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            `;
+        });
+    }
+}
+
+// Authentication Functions
+function updateUIForAuthenticatedUser() {
+    const authLinks = document.getElementById('authLinks');
+    const userLinks = document.getElementById('userLinks');
+    const userName = document.getElementById('userName');
+    
+    if (authLinks) authLinks.style.display = 'none';
+    if (userLinks) userLinks.style.display = 'flex';
+    if (userName) userName.textContent = currentUser.name;
+}
+
+function updateUIForUnauthenticatedUser() {
+    const authLinks = document.getElementById('authLinks');
+    const userLinks = document.getElementById('userLinks');
+    
+    if (authLinks) authLinks.style.display = 'flex';
+    if (userLinks) userLinks.style.display = 'none';
+}
+
+// Enhanced Auth Form Handlers
+function setupAuthForms() {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.name);
+                    
+                    showNotification('Login successful!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    showNotification(data.message || 'Login failed. Please try again.');
+                }
+            } catch (error) {
+                showNotification('An error occurred. Please try again.');
+            } finally {
+                // Restore button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    }
+
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (password !== confirmPassword) {
+                    showNotification('Passwords do not match');
+                    return;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showNotification('Registration successful!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1000);
+                } else {
+                    showNotification(data.message || 'Registration failed. Please try again.');
+                }
+            } catch (error) {
+                showNotification('An error occurred. Please try again.');
+            } finally {
+                // Restore button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    }
+}
+
+// Enhanced Notification System
+function showNotification(message, type = 'error') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+    
+    // Remove any existing animation classes
+    notification.classList.remove('hide');
+    
+    // Force a reflow to restart the animation
+    void notification.offsetWidth;
+    
+    setTimeout(() => {
+        notification.classList.add('hide');
+        setTimeout(() => {
+            notification.style.display = 'none';
+            notification.classList.remove('hide');
+        }, 300);
+    }, 3000);
+}
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,123 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupCartPage();
     }
 });
-
-// Authentication Functions
-function checkAuthState() {
-    const token = localStorage.getItem('token');
-    const userName = localStorage.getItem('userName');
-    
-    if (token && userName) {
-        currentUser = { name: userName };
-        updateUIForAuthenticatedUser();
-    } else {
-        updateUIForUnauthenticatedUser();
-    }
-}
-
-function updateUIForAuthenticatedUser() {
-    const authLinks = document.getElementById('authLinks');
-    const userLinks = document.getElementById('userLinks');
-    const userName = document.getElementById('userName');
-    
-    if (authLinks) authLinks.style.display = 'none';
-    if (userLinks) userLinks.style.display = 'flex';
-    if (userName) userName.textContent = currentUser.name;
-}
-
-function updateUIForUnauthenticatedUser() {
-    const authLinks = document.getElementById('authLinks');
-    const userLinks = document.getElementById('userLinks');
-    
-    if (authLinks) authLinks.style.display = 'flex';
-    if (userLinks) userLinks.style.display = 'none';
-}
-
-function setupAuthForms() {
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-    }
-
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleRegister);
-    }
-}
-
-async function handleLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const errorMessage = document.getElementById('errorMessage');
-
-    try {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('userName', data.name);
-            window.location.href = '/';
-        } else {
-            errorMessage.textContent = data.error || 'Login failed';
-            errorMessage.style.display = 'block';
-        }
-    } catch (error) {
-        errorMessage.textContent = 'An error occurred. Please try again.';
-        errorMessage.style.display = 'block';
-    }
-}
-
-async function handleRegister(e) {
-    e.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const errorMessage = document.getElementById('errorMessage');
-
-    if (password !== confirmPassword) {
-        errorMessage.textContent = 'Passwords do not match';
-        errorMessage.style.display = 'block';
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('userName', data.name);
-            window.location.href = '/';
-        } else {
-            errorMessage.textContent = data.error || 'Registration failed';
-            errorMessage.style.display = 'block';
-        }
-    } catch (error) {
-        errorMessage.textContent = 'An error occurred. Please try again.';
-        errorMessage.style.display = 'block';
-    }
-}
-
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('cart');
-    window.location.href = '/login';
-}
 
 // Navigation Setup
 function setupNavigation() {
@@ -248,17 +290,6 @@ function handleAddToCart(e) {
 
     localStorage.setItem('cart', JSON.stringify(cart));
     showNotification('Item added to cart!');
-}
-
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
 }
 
 // Profile Management Functions
@@ -400,21 +431,6 @@ async function handleCheckout(e) {
 }
 
 // Utility Functions
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    const notificationMessage = document.getElementById('notificationMessage');
-    
-    if (notification && notificationMessage) {
-        notification.className = `notification ${type}`;
-        notificationMessage.textContent = message;
-        notification.style.display = 'block';
-        
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    }
-}
-
 function updateNavigation(isAuthenticated) {
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;

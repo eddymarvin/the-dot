@@ -3,53 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - The Dot Liquor Store</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232a2a2a' stroke='%23FFD700' stroke-width='5'/%3E%3Ctext x='50' y='65' font-family='Arial' font-size='40' fill='%23FFD700' text-anchor='middle'%3E•%3C/text%3E%3C/svg%3E">
+    <title>Login - The Dot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <header class="main-header">
-        <nav>
-            <div class="logo">
-                <a href="/" style="text-decoration: none;">
-                    <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
-                        <circle cx="50" cy="50" r="45" fill="#2a2a2a" stroke="#FFD700" stroke-width="5"/>
-                        <text x="50" y="65" font-family="Arial" font-size="40" fill="#FFD700" text-anchor="middle">•</text>
-                    </svg>
-                    <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container container">
+                <a href="/" class="navbar-brand">
+                    <i class="fas fa-glass-martini-alt"></i>
+                    The Dot
                 </a>
-            </div>
-            <div class="nav-links">
-                <a href="/"><i class="fas fa-home"></i> Home</a>
-                <a href="/cart"><i class="fas fa-shopping-cart"></i> Cart</a>
-                <a href="/login" class="active"><i class="fas fa-user"></i> Login</a>
-                <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="/cart" class="nav-link cart-badge">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Cart</span>
+                        <span class="cart-count">0</span>
+                    </a>
+                    <a href="/login" class="nav-link active">
+                        <i class="fas fa-user"></i>
+                        <span>Login</span>
+                    </a>
+                    <a href="/register" class="nav-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Register</span>
+                    </a>
+                </div>
             </div>
         </nav>
     </header>
 
-    <main class="container">
-        <div class="form-container">
-            <h2 class="text-center mb-2"><i class="fas fa-lock gold-text"></i> Login</h2>
-            <form id="loginForm">
-                <div id="errorMessage" class="notification" style="display: none;"></div>
-                <div class="form-group">
-                    <label class="form-label" for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-input" required placeholder="Enter your email">
+    <main>
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <i class="fas fa-lock"></i>
+                    <h2>Welcome Back</h2>
+                    <p>Enter your credentials to continue</p>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="password">Password</label>
-                    <input type="password" id="password" name="password" class="form-input" required placeholder="Enter your password">
+                
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="email" name="email" required placeholder="Email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <i class="fas fa-key"></i>
+                            <input type="password" id="password" name="password" required placeholder="Password">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="/register">Register here</a></p>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
-            </form>
-            <p class="text-center mt-2">
-                Don't have an account? <a href="/register" class="gold-text">Register here</a>
-            </p>
+            </div>
         </div>
     </main>
+
+    <div id="notification" class="notification" style="display: none;"></div>
 
     <script src="/static/js/main.js"></script>
 </body>
