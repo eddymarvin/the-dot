@@ -59,13 +59,13 @@ func SetupRoutes(router *gin.Engine) {
 		protected.DELETE("/cart/:product_id", RemoveFromCart)
 
 		// Order routes
-		protected.POST("/orders", CreateOrder)
+		protected.POST("/orders", CreateOrderHandler)
 		protected.GET("/orders/:id", GetOrder)
 		protected.GET("/orders", GetOrders)
 	}
 
 	// Public M-Pesa callback
-	router.POST("/api/v1/mpesa/callback", handleMpesaCallback)
+	router.POST("/api/v1/mpesa/callback", HandleMpesaCallback)
 
 	// Admin routes
 	admin := router.Group("/admin")
