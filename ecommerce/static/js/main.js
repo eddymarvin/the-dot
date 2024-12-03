@@ -8,7 +8,88 @@ let selectedPaymentMethod = null;
 const FREE_DELIVERY_THRESHOLD = 100;
 const DELIVERY_FEE = 10;
 
+// Authentication State Management
+let currentUser = null;
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthState();
+    setupNavigation();
+    setupAuthForms();
+    setupCartFunctions();
+    setupProfileFunctions();
+    setupModalClosers();
+    updateNavigation(!!localStorage.getItem('token'));
+    updateCartCount();
+
+    // Set up form handlers
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+
+    // Initialize products page
+    if (document.querySelector('.products-grid')) {
+        setupProductButtons();
+    }
+
+    // Initialize cart page
+    if (window.location.pathname.includes('/cart')) {
+        renderCart();
+        setupCartPage();
+    }
+});
+
 // Authentication Functions
+function checkAuthState() {
+    const token = localStorage.getItem('token');
+    const userName = localStorage.getItem('userName');
+    
+    if (token && userName) {
+        currentUser = { name: userName };
+        updateUIForAuthenticatedUser();
+    } else {
+        updateUIForUnauthenticatedUser();
+    }
+}
+
+function updateUIForAuthenticatedUser() {
+    const authLinks = document.getElementById('authLinks');
+    const userLinks = document.getElementById('userLinks');
+    const userName = document.getElementById('userName');
+    
+    if (authLinks) authLinks.style.display = 'none';
+    if (userLinks) userLinks.style.display = 'flex';
+    if (userName) userName.textContent = currentUser.name;
+}
+
+function updateUIForUnauthenticatedUser() {
+    const authLinks = document.getElementById('authLinks');
+    const userLinks = document.getElementById('userLinks');
+    
+    if (authLinks) authLinks.style.display = 'flex';
+    if (userLinks) userLinks.style.display = 'none';
+}
+
+function setupAuthForms() {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+}
+
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('email').value;
@@ -16,66 +97,305 @@ async function handleLogin(e) {
     const errorMessage = document.getElementById('errorMessage');
 
     try {
-        const response = await fetch('/api/v1/login', {
+        const response = await fetch('/api/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Login failed');
-        }
-
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        showNotification('Login successful! Redirecting...', 'success');
-        updateNavigation(true);
-
-        setTimeout(() => {
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userName', data.name);
             window.location.href = '/';
-        }, 1000);
+        } else {
+            errorMessage.textContent = data.error || 'Login failed';
+            errorMessage.style.display = 'block';
+        }
     } catch (error) {
-        errorMessage.textContent = error.message;
+        errorMessage.textContent = 'An error occurred. Please try again.';
         errorMessage.style.display = 'block';
-        showNotification(error.message, 'error');
     }
 }
 
 async function handleRegister(e) {
     e.preventDefault();
+    const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const name = document.getElementById('name').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
     const errorMessage = document.getElementById('errorMessage');
 
+    if (password !== confirmPassword) {
+        errorMessage.textContent = 'Passwords do not match';
+        errorMessage.style.display = 'block';
+        return;
+    }
+
     try {
-        const response = await fetch('/api/v1/register', {
+        const response = await fetch('/api/register', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password, name }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
         });
 
         const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Registration failed');
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userName', data.name);
+            window.location.href = '/';
+        } else {
+            errorMessage.textContent = data.error || 'Registration failed';
+            errorMessage.style.display = 'block';
         }
-
-        showNotification('Registration successful! Please login.', 'success');
-        setTimeout(() => {
-            window.location.href = '/login';
-        }, 1500);
     } catch (error) {
-        errorMessage.textContent = error.message;
+        errorMessage.textContent = 'An error occurred. Please try again.';
         errorMessage.style.display = 'block';
-        showNotification(error.message, 'error');
+    }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('cart');
+    window.location.href = '/login';
+}
+
+// Navigation Setup
+function setupNavigation() {
+    const homeBtn = document.querySelector('.nav-link[href="/"]');
+    const cartBtn = document.querySelector('.nav-link[href="/cart"]');
+    const profileBtn = document.querySelector('.nav-link[href="/profile"]');
+    const logoutBtn = document.querySelector('.nav-link[href="/logout"]');
+
+    if (homeBtn) {
+        homeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/';
+        });
+    }
+
+    if (cartBtn) {
+        cartBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/cart';
+        });
+    }
+
+    if (profileBtn) {
+        profileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showNotification('Please log in to view your profile', 'error');
+                return;
+            }
+            window.location.href = '/profile';
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+}
+
+// Cart Management Functions
+function setupCartFunctions() {
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    const checkoutButton = document.getElementById('checkoutBtn');
+    const checkoutForm = document.getElementById('checkoutForm');
+
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', handleAddToCart);
+    });
+
+    if (checkoutButton) {
+        checkoutButton.addEventListener('click', showCheckoutModal);
+    }
+
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', handleCheckout);
+    }
+
+    // Load cart on cart page
+    if (window.location.pathname === '/cart') {
+        loadCart();
+    }
+}
+
+function handleAddToCart(e) {
+    const productId = e.target.dataset.productId;
+    const productName = e.target.dataset.name;
+    const productPrice = parseFloat(e.target.dataset.price);
+
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const existingItem = cart.find(item => item.id === productId);
+
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            quantity: 1
+        });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    showNotification('Item added to cart!');
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Profile Management Functions
+function setupProfileFunctions() {
+    const updateProfileForm = document.getElementById('updateProfileForm');
+    
+    if (updateProfileForm) {
+        loadProfileData();
+        updateProfileForm.addEventListener('submit', handleUpdateProfile);
+    }
+}
+
+async function loadProfileData() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const response = await fetch('/api/profile', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('updateName').value = data.name;
+            document.getElementById('updateEmail').value = data.email;
+            document.getElementById('profileName').textContent = data.name;
+            document.getElementById('profileEmail').textContent = data.email;
+        }
+    } catch (error) {
+        showNotification('Failed to load profile data');
+    }
+}
+
+async function handleUpdateProfile(e) {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const formData = new FormData(e.target);
+    const data = {
+        name: formData.get('name'),
+        currentPassword: formData.get('currentPassword'),
+        newPassword: formData.get('newPassword')
+    };
+
+    try {
+        const response = await fetch('/api/profile/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showNotification('Profile updated successfully');
+            localStorage.setItem('userName', data.name);
+            checkAuthState();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Failed to update profile');
+        }
+    } catch (error) {
+        showNotification('An error occurred. Please try again.');
+    }
+}
+
+// Modal Functions
+function setupModalClosers() {
+    const modals = document.querySelectorAll('.modal');
+    const closeButtons = document.querySelectorAll('.close');
+
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('.modal');
+            if (modal) modal.style.display = 'none';
+        });
+    });
+
+    modals.forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+}
+
+function showCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    if (modal) modal.style.display = 'block';
+}
+
+async function handleCheckout(e) {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    const formData = new FormData(e.target);
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    const orderData = {
+        items: cart,
+        deliveryDetails: {
+            name: formData.get('name'),
+            address: formData.get('address'),
+            phone: formData.get('phone')
+        },
+        paymentMethod: formData.get('paymentMethod')
+    };
+
+    try {
+        const response = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.removeItem('cart');
+            window.location.href = `/order-confirmation/${data.orderId}`;
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Failed to create order');
+        }
+    } catch (error) {
+        showNotification('An error occurred. Please try again.');
     }
 }
 
@@ -170,6 +490,70 @@ function displayProducts(products) {
     `).join('');
 }
 
+// Product Button Setup
+function setupProductButtons() {
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const { productId, name, price } = e.target.dataset;
+            addToCart(productId, name, parseFloat(price));
+            showNotification(`${name} added to cart!`, 'success');
+            updateCartCount();
+        });
+    });
+}
+
+// Cart Page Setup
+function setupCartPage() {
+    const proceedToDeliveryBtn = document.getElementById('proceedToDelivery');
+    const proceedToPaymentBtn = document.getElementById('proceedToPayment');
+    const confirmPaymentBtn = document.getElementById('confirmPayment');
+    
+    if (proceedToDeliveryBtn) {
+        proceedToDeliveryBtn.addEventListener('click', () => {
+            if (getCart().length === 0) {
+                showNotification('Your cart is empty', 'error');
+                return;
+            }
+            proceedToDelivery();
+        });
+    }
+
+    if (proceedToPaymentBtn) {
+        proceedToPaymentBtn.addEventListener('click', () => {
+            if (validateDeliveryForm()) {
+                proceedToPayment();
+            } else {
+                showNotification('Please fill in all required delivery details', 'error');
+            }
+        });
+    }
+
+    if (confirmPaymentBtn) {
+        confirmPaymentBtn.addEventListener('click', () => {
+            if (validatePaymentMethod()) {
+                confirmPayment();
+            }
+        });
+    }
+
+    // Payment method selection
+    const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', (e) => {
+            document.querySelectorAll('.payment-form').forEach(form => {
+                form.style.display = 'none';
+            });
+            const selectedForm = document.getElementById(`${e.target.value}Form`);
+            if (selectedForm) {
+                selectedForm.style.display = 'block';
+            }
+        });
+    });
+}
+
 // Payment validation functions
 function validateDeliveryForm() {
     const requiredFields = ['name', 'address', 'city', 'phone'];
@@ -212,81 +596,6 @@ function validatePaymentMethod() {
 
     return isValid;
 }
-
-// Main initialization
-document.addEventListener('DOMContentLoaded', function() {
-    const token = localStorage.getItem('token');
-    updateNavigation(!!token);
-    updateCartCount();
-
-    // Set up form handlers
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-    }
-    
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleRegister);
-    }
-
-    // Initialize products page
-    if (document.querySelector('.products-grid')) {
-        fetchProducts();
-    }
-
-    // Initialize cart page
-    if (window.location.pathname === '/cart') {
-        renderCart();
-        
-        // Cart navigation buttons
-        const proceedToDeliveryBtn = document.getElementById('proceedToDelivery');
-        if (proceedToDeliveryBtn) {
-            proceedToDeliveryBtn.addEventListener('click', () => {
-                if (getCart().length === 0) {
-                    showNotification('Your cart is empty', 'error');
-                    return;
-                }
-                proceedToDelivery();
-            });
-        }
-
-        const proceedToPaymentBtn = document.getElementById('proceedToPayment');
-        if (proceedToPaymentBtn) {
-            proceedToPaymentBtn.addEventListener('click', () => {
-                if (validateDeliveryForm()) {
-                    proceedToPayment();
-                } else {
-                    showNotification('Please fill in all required delivery details', 'error');
-                }
-            });
-        }
-
-        const confirmPaymentBtn = document.getElementById('confirmPayment');
-        if (confirmPaymentBtn) {
-            confirmPaymentBtn.addEventListener('click', () => {
-                if (validatePaymentMethod()) {
-                    confirmPayment();
-                }
-            });
-        }
-
-        // Payment method selection
-        const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
-        paymentMethods.forEach(method => {
-            method.addEventListener('change', (e) => {
-                document.querySelectorAll('.payment-form').forEach(form => {
-                    form.style.display = 'none';
-                });
-                const selectedForm = document.getElementById(`${e.target.value}Form`);
-                if (selectedForm) {
-                    selectedForm.style.display = 'block';
-                }
-            });
-        });
-    }
-});
 
 // Cart functions
 function getCart() {

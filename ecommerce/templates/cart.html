@@ -3,172 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart - The Dot Liquor Store</title>
+    <title>Cart - The Dot Liquor Store</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232a2a2a' stroke='%23FFD700' stroke-width='5'/%3E%3Ctext x='50' y='65' font-family='Arial' font-size='40' fill='%23FFD700' text-anchor='middle'%3E•%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="dark-theme">
+<body>
     <header class="main-header">
         <nav>
             <div class="logo">
-                <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
-                    <circle cx="50" cy="50" r="45" fill="#2a2a2a" stroke="#FFD700" stroke-width="5"/>
-                    <text x="50" y="65" font-family="Arial" font-size="40" fill="#FFD700" text-anchor="middle">•</text>
-                </svg>
-                <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
+                <a href="/" style="text-decoration: none;">
+                    <svg class="logo-svg" viewBox="0 0 100 100" width="40" height="40">
+                        <circle cx="50" cy="50" r="45" fill="#2a2a2a" stroke="#FFD700" stroke-width="5"/>
+                        <text x="50" y="65" font-family="Arial" font-size="40" fill="#FFD700" text-anchor="middle">•</text>
+                    </svg>
+                    <h1>The Dot <span class="gold-text">Liquor Store</span></h1>
+                </a>
             </div>
             <div class="nav-links">
                 <a href="/"><i class="fas fa-home"></i> Home</a>
-                <div class="auth-links" id="authLinks">
+                <a href="/cart" class="active"><i class="fas fa-shopping-cart"></i> Cart</a>
+                <div id="authLinks">
                     <a href="/login"><i class="fas fa-user"></i> Login</a>
                     <a href="/register"><i class="fas fa-user-plus"></i> Register</a>
                 </div>
-                <div class="user-links" id="userLinks" style="display: none;">
-                    <span id="userName" class="gold-text"></span>
-                    <a href="/cart" class="active"><i class="fas fa-shopping-cart"></i> Cart (<span id="cartCount">0</span>)</a>
+                <div id="userLinks" style="display: none;">
+                    <a href="/profile"><i class="fas fa-user-circle"></i> <span id="userName"></span></a>
                     <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main class="cart-container">
-        <div class="cart-content">
-            <h2><i class="fas fa-shopping-cart gold-text"></i> Shopping Cart</h2>
-            
-            <div id="emptyCart" class="empty-cart" style="display: none;">
-                <i class="fas fa-shopping-basket"></i>
-                <p>Your cart is empty</p>
-                <a href="/" class="btn-primary">Continue Shopping</a>
+    <main class="container">
+        <div class="cart-container">
+            <h2 class="text-center mb-2"><i class="fas fa-shopping-cart gold-text"></i> Shopping Cart</h2>
+            <div id="cartItems">
+                <!-- Cart items will be dynamically added here -->
+                <p class="text-center">Your cart is empty</p>
             </div>
-
-            <div id="cartItems" class="cart-items">
-                <!-- Cart items will be dynamically inserted here -->
-            </div>
-
-            <div id="deliveryForm" class="delivery-form" style="display: none;">
-                <h3><i class="fas fa-truck gold-text"></i> Delivery Information</h3>
-                <form id="deliveryDetailsForm">
-                    <div class="form-group">
-                        <label for="address">Street Address</label>
-                        <input type="text" id="address" name="address" required>
+            <div id="cartSummary" style="display: none;">
+                <div class="cart-summary">
+                    <div class="summary-item">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="city">City</label>
-                            <input type="text" id="city" name="city" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="zipCode">ZIP Code</label>
-                            <input type="text" id="zipCode" name="zipCode" required>
-                        </div>
+                    <div class="summary-item">
+                        <span>Delivery Fee:</span>
+                        <span id="deliveryFee">$10.00</span>
                     </div>
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="deliveryInstructions">Delivery Instructions (Optional)</label>
-                        <textarea id="deliveryInstructions" name="deliveryInstructions" rows="2"></textarea>
-                    </div>
-                </form>
-            </div>
-
-            <div id="paymentSection" class="payment-section" style="display: none;">
-                <h3><i class="fas fa-credit-card gold-text"></i> Payment Method</h3>
-                <div class="payment-methods">
-                    <div class="payment-method" onclick="selectPaymentMethod('card')">
-                        <i class="fas fa-credit-card"></i>
-                        <span>Credit Card</span>
-                    </div>
-                    <div class="payment-method" onclick="selectPaymentMethod('paypal')">
-                        <i class="fab fa-paypal"></i>
-                        <span>PayPal</span>
-                    </div>
-                    <div class="payment-method" onclick="selectPaymentMethod('crypto')">
-                        <i class="fab fa-bitcoin"></i>
-                        <span>Crypto</span>
+                    <div class="summary-item total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
                     </div>
                 </div>
-                
-                <div id="cardPaymentForm" class="payment-form" style="display: none;">
-                    <form id="cardForm">
-                        <div class="form-group">
-                            <label for="cardNumber">Card Number</label>
-                            <input type="text" id="cardNumber" name="cardNumber" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="expiryMonth">Expiry Month</label>
-                                <input type="number" id="expiryMonth" name="expiryMonth" min="1" max="12" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="expiryYear">Expiry Year</label>
-                                <input type="number" id="expiryYear" name="expiryYear" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="cvv">CVV</label>
-                                <input type="text" id="cvv" name="cvv" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="cardHolderName">Card Holder Name</label>
-                            <input type="text" id="cardHolderName" name="cardHolderName" required>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="cart-summary">
-                <div class="summary-row">
-                    <span>Subtotal:</span>
-                    <span id="subtotal">$0.00</span>
-                </div>
-                <div class="summary-row">
-                    <span>Delivery Fee:</span>
-                    <span id="deliveryFee">$10.00</span>
-                </div>
-                <div class="summary-row total">
-                    <span>Total:</span>
-                    <span id="total">$0.00</span>
-                </div>
-                <button id="proceedToDelivery" class="btn-primary">Proceed to Delivery</button>
-                <button id="proceedToPayment" class="btn-primary" style="display: none;">Proceed to Payment</button>
-                <button id="confirmPayment" class="btn-primary" style="display: none;">Confirm Payment</button>
+                <button id="checkoutBtn" class="btn btn-primary" style="width: 100%;">
+                    Proceed to Checkout
+                </button>
             </div>
         </div>
     </main>
 
-    <div id="notification" class="notification">
-        <span id="notificationMessage"></span>
-    </div>
-
-    <footer class="main-footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>About Us</h3>
-                <p>Premium liquor store with blockchain-verified authenticity.</p>
-            </div>
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <a href="#">Terms & Conditions</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Contact Us</a>
-            </div>
-            <div class="footer-section">
-                <h3>Connect With Us</h3>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
+    <div id="checkoutModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Checkout</h2>
+            <form id="checkoutForm">
+                <div class="form-group">
+                    <label class="form-label">Delivery Details</label>
+                    <input type="text" name="name" class="form-input" placeholder="Full Name" required>
+                    <input type="text" name="address" class="form-input" placeholder="Delivery Address" required>
+                    <input type="text" name="phone" class="form-input" placeholder="Phone Number" required>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <div class="payment-methods">
+                        <div class="payment-method">
+                            <input type="radio" name="paymentMethod" value="mpesa" id="mpesa" checked>
+                            <label for="mpesa">
+                                <i class="fas fa-mobile-alt"></i>
+                                M-Pesa
+                            </label>
+                        </div>
+                        <div class="payment-method">
+                            <input type="radio" name="paymentMethod" value="card" id="card">
+                            <label for="card">
+                                <i class="fas fa-credit-card"></i>
+                                Card
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Complete Order</button>
+            </form>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 The Dot Liquor Store. Please drink responsibly.</p>
-        </div>
-    </footer>
+    </div>
 
     <script src="/static/js/main.js"></script>
     <script>
@@ -186,26 +116,18 @@
         function loadCart() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const cartItems = document.getElementById('cartItems');
-            const emptyCart = document.getElementById('emptyCart');
+            const cartSummary = document.getElementById('cartSummary');
             const subtotalElement = document.getElementById('subtotal');
             const deliveryFeeElement = document.getElementById('deliveryFee');
             const totalElement = document.getElementById('total');
-            const remainingForFreeElement = document.getElementById('remainingForFree');
-            const freeDeliveryMessage = document.getElementById('freeDeliveryMessage');
-            const cartCountElement = document.getElementById('cartCount');
             
             if (cart.length === 0) {
-                emptyCart.style.display = 'block';
-                cartItems.style.display = 'none';
+                cartItems.innerHTML = '<p class="text-center">Your cart is empty</p>';
+                cartSummary.style.display = 'none';
                 return;
             }
 
-            emptyCart.style.display = 'none';
-            cartItems.style.display = 'block';
-
-            let subtotal = 0;
             cartItems.innerHTML = cart.map((item, index) => {
-                subtotal += item.price * item.quantity;
                 return `
                     <div class="cart-item">
                         <div class="item-details">
@@ -228,6 +150,11 @@
                 `;
             }).join('');
 
+            let subtotal = 0;
+            cart.forEach(item => {
+                subtotal += item.price * item.quantity;
+            });
+
             const deliveryFee = subtotal >= 100 ? 0 : 10;
             const total = subtotal + deliveryFee;
 
@@ -235,14 +162,7 @@
             deliveryFeeElement.textContent = `$${deliveryFee.toFixed(2)}`;
             totalElement.textContent = `$${total.toFixed(2)}`;
 
-            if (subtotal >= 100) {
-                freeDeliveryMessage.innerHTML = '<span class="success">Free Delivery Applied!</span>';
-            } else {
-                const remaining = (100 - subtotal).toFixed(2);
-                remainingForFreeElement.textContent = remaining;
-            }
-
-            cartCountElement.textContent = cart.length;
+            cartSummary.style.display = 'block';
         }
 
         function updateQuantity(index, change) {
@@ -259,35 +179,14 @@
             loadCart();
         }
 
-        document.getElementById('checkoutButton').addEventListener('click', function() {
+        document.getElementById('checkoutBtn').addEventListener('click', function() {
+            document.getElementById('checkoutModal').style.display = 'block';
+        });
+
+        document.getElementById('checkoutForm').addEventListener('submit', function(event) {
+            event.preventDefault();
             // Implement checkout logic here
             alert('Checkout functionality coming soon!');
-        });
-
-        document.getElementById('proceedToDelivery').addEventListener('click', function() {
-            document.getElementById('deliveryForm').style.display = 'block';
-            document.getElementById('proceedToDelivery').style.display = 'none';
-        });
-
-        document.getElementById('deliveryDetailsForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            document.getElementById('paymentSection').style.display = 'block';
-            document.getElementById('deliveryForm').style.display = 'none';
-        });
-
-        function selectPaymentMethod(method) {
-            document.getElementById('cardPaymentForm').style.display = method === 'card' ? 'block' : 'none';
-            document.getElementById('proceedToPayment').style.display = 'block';
-        }
-
-        document.getElementById('proceedToPayment').addEventListener('click', function() {
-            document.getElementById('confirmPayment').style.display = 'block';
-            document.getElementById('proceedToPayment').style.display = 'none';
-        });
-
-        document.getElementById('confirmPayment').addEventListener('click', function() {
-            // Implement payment confirmation logic here
-            alert('Payment confirmation functionality coming soon!');
         });
     </script>
 </body>
